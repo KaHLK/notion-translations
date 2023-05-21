@@ -1,0 +1,22 @@
+{
+  "name": "notion-translations",
+  "main": "build/index.js",
+  "bin": {
+    "translations": "index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node index.js",
+    "prestart": "yarn build"
+  },
+  "devDependencies": {
+    "rome": "12.1.2",
+    "typescript": "5.0.4"
+  },
+  "dependencies": {
+    "@notionhq/client": "2.2.5",
+    "commander": "10.0.1",
+    "dotenv": "16.0.3",
+    "prompt-sync": "4.2.0"
+  }
+}
