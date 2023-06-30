@@ -1,7 +1,8 @@
 import { Client, collectPaginatedAPI } from "@notionhq/client";
-import { Result, ok, err } from "./util/result";
 import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+
 import { map_error } from "./util/notion";
+import { Result, err, ok } from "./util/result";
 
 export async function get_databases(
     client: Client,

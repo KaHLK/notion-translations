@@ -1,11 +1,11 @@
 import { Client } from "@notionhq/client";
 import chalk from "chalk";
 
-import { Config } from "../config";
 import { get_databases } from "../api";
+import { Config } from "../config";
 import { Database } from "../model";
-import { notImplementedYet } from "../util/fn";
 import { choose } from "../util/cli";
+import { notImplementedYet } from "../util/fn";
 
 export async function add(config: Config, client: Client) {
     const databases = (await get_databases(client)).unwrap();

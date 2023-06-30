@@ -2,9 +2,9 @@ import { Client } from "@notionhq/client";
 import { Command } from "commander";
 import dotenv from "dotenv";
 
+import { Local, Util } from "./commands";
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
-import { Local, Util } from "./commands";
 
 export default async function main(): Promise<number> {
     dotenv.config();

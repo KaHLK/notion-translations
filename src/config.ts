@@ -1,9 +1,9 @@
 import { readFile, rm, writeFile } from "fs/promises";
 
-import { Result, err, ok } from "./util/result";
 import { CONFIG_FILE } from "./constants";
-import { exists } from "./util/fs";
 import { Database } from "./model";
+import { exists } from "./util/fs";
+import { Result, err, ok } from "./util/result";
 
 type NonFunctionMembers<T> = {
     [P in keyof T as T[P] extends Function ? never : P]: T[P];
