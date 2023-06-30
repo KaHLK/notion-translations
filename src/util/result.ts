@@ -1,9 +1,11 @@
+import { Option, some, none } from "./option";
+
 enum ResultVariant {
     OK = 0,
     ERR = 1,
 }
 
-export type Result<T, E> = Ok<T, E> | Err<T, E>;
+export type Result<T, E> = Ok<T, E> | Err<E, T>;
 export function ok<T>(value: T): Result<T, never> {
     return new Ok(value);
 }
@@ -11,7 +13,7 @@ export function err<E>(error: E): Result<never, E> {
     return new Err(error);
 }
 
-abstract class _Result<T, E> {
+abstract class ResultImpl<T, E> {
     abstract type: ResultVariant;
     abstract toString(): String;
 
@@ -19,22 +21,36 @@ abstract class _Result<T, E> {
         return this.type === ResultVariant.OK;
     }
 
-    isErr(): this is Err<T, E> {
+    isErr(): this is Err<E, T> {
         return this.type === ResultVariant.ERR;
     }
 
-    ok(this: Result<T, E>): T | null {
-        if (this.isOk()) {
-            return this.value;
-        }
-        return null;
+    isOkAnd(
+        this: Result<T, E>,
+        predicate: (value: T) => boolean,
+    ): this is Ok<T, E> {
+        return this.isOk() && predicate(this.value);
     }
 
-    err(this: Result<T, E>): E | null {
-        if (this.isErr()) {
-            return this.error;
+    isErrAnd(
+        this: Result<T, E>,
+        predicate: (value: E) => boolean,
+    ): this is Err<T, E> {
+        return this.isErr() && predicate(this.error);
+    }
+
+    get ok(): Option<T> {
+        if (this.isOk()) {
+            return some(this.value);
         }
-        return null;
+        return none();
+    }
+
+    get err(): Option<E> {
+        if (this.isErr()) {
+            return some(this.error);
+        }
+        return none();
     }
 
     map<U>(this: Result<T, E>, cb: (value: T) => U): Result<U, E> {
@@ -64,15 +80,28 @@ abstract class _Result<T, E> {
         }
     }
 
+    expect(this: Result<T, E>, msg: string): T {
+        if (this.isOk()) {
+            return this.value;
+        }
+        throw new Error(msg);
+    }
+
+    expectErr(this: Result<T, E>, msg: string): E {
+        if (this.isErr()) {
+            return this.error;
+        }
+        throw new Error(msg);
+    }
+
     unwrap(this: Result<T, E>): T {
         if (this.isOk()) {
             return this.value;
-        } else {
-            throw this.error;
         }
+        throw this.error;
     }
 
-    unwrapOr(this: Result<T, E>, def: T): T {
+    unwrapOr(this: ResultImpl<T, E>, def: T): T {
         if (this.isOk()) {
             return this.value;
         }
@@ -85,9 +114,53 @@ abstract class _Result<T, E> {
         }
         return cb();
     }
+
+    and<U>(this: Result<T, E>, other: Result<U, E>): Result<U, E> {
+        if (this.isOk()) {
+            return other;
+        }
+        return err(this.error);
+    }
+
+    andThen<U>(
+        this: Result<T, E>,
+        cb: (value: T) => Result<U, E>,
+    ): Result<U, E> {
+        if (this.isOk()) {
+            return cb(this.value);
+        }
+        return err(this.error);
+    }
+
+    or(this: Result<T, E>, other: Result<T, E>): Result<T, E> {
+        if (this.isOk()) {
+            return this;
+        }
+        return other;
+    }
+
+    transpose(this: Result<Option<T>, E>): Option<Result<T, E>> {
+        if (this.isOk()) {
+            if (this.value.isSome()) {
+                return some(ok(this.value.value));
+            }
+            return none();
+        }
+        return some(err(this.error));
+    }
+    /* Missing functions:
+     * map_or_else
+     * inspect
+     * inspect_err
+     * expect_err
+     * unwrap_err
+     * or_else
+     * flatten
+     * from
+     */
 }
 
-class Ok<T, E> extends _Result<T, E> {
+class Ok<T, E> extends ResultImpl<T, E> {
     type = ResultVariant.OK;
     #value: T;
     get value() {
@@ -105,7 +178,7 @@ class Ok<T, E> extends _Result<T, E> {
     }
 }
 
-class Err<T, E> extends _Result<T, E> {
+class Err<E, T> extends ResultImpl<T, E> {
     type = ResultVariant.ERR;
     #error: E;
     get error() {
