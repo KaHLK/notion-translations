@@ -3,18 +3,29 @@ import { readFile, rm, writeFile } from "fs/promises";
 import { Result, err, ok } from "./util/result";
 import { CONFIG_FILE } from "./constants";
 import { exists } from "./util/fs";
+import { Database } from "./model";
 
 type NonFunctionMembers<T> = {
     [P in keyof T as T[P] extends Function ? never : P]: T[P];
 };
 
-type ConfigJson = NonFunctionMembers<Config>;
+type Writable<T> = {
+    -readonly [P in keyof T]: Writable<T[P]>;
+};
+
+type ConfigJson = Partial<Writable<NonFunctionMembers<Config>>>;
 
 export class Config {
     out: string;
+    #databases: Database[];
 
-    private constructor(out: string) {
+    get databases(): readonly Database[] {
+        return this.#databases;
+    }
+
+    private constructor(out: string, databases: Database[]) {
         this.out = out;
+        this.#databases = databases;
     }
 
     /**
@@ -23,7 +34,7 @@ export class Config {
      * @returns A new empty config
      */
     static empty(): Config {
-        return new Config("");
+        return new Config("", []);
     }
 
     /**
@@ -35,7 +46,7 @@ export class Config {
         try {
             const config_str = (await readFile(CONFIG_FILE)).toString();
             const obj = JSON.parse(config_str) as ConfigJson;
-            return ok(new Config(obj.out));
+            return ok(new Config(obj.out ?? "", obj.databases ?? []));
         } catch (e) {
             return err(new Error(`Failed to read or parse config file (${e})`));
         }
@@ -59,6 +70,16 @@ export class Config {
     }
 
     is_empty(): boolean {
-        return true;
+        return this.databases.length === 0;
+    }
+
+    add_databases(databases: Database[]) {
+        this.#databases = this.#databases.filter(
+            (d) => !databases.some((db) => db.id === d.id),
+        );
+        this.#databases.push(...databases);
+    }
+    update_database(index: number, db: Database) {
+        this.#databases[index] = db;
     }
 }
