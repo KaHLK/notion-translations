@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
-import { Util } from "./commands";
+import { Database, Util } from "./commands";
 
 export default async function main(): Promise<number> {
     dotenv.config();
@@ -48,7 +48,7 @@ export default async function main(): Promise<number> {
     db.command("add")
         .description("Add new databases to the list")
         .action(async () => {
-            /* TODO */
+            Database.add(config, notion);
         });
     db.command("rm")
         .description("Remove a database from the list")
