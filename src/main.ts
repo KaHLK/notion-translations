@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
-import { Database, Util } from "./commands";
+import { Local, Util } from "./commands";
 
 export default async function main(): Promise<number> {
     dotenv.config();
@@ -41,42 +41,53 @@ export default async function main(): Promise<number> {
         .option("-a, --all", "Also remove all config files")
         .action(async (_, opt) => await Util.clean(opt.opts()));
 
-    const db = app
-        .command("db")
-        .description("Manipulate the list of databases to work with");
+    const local = app
+        .command("local")
+        .description("Manipulate the local list of databases to work with");
 
-    db.command("add")
+    local
+        .command("add")
         .description("Add new databases to the list")
         .action(async () => {
-            Database.add(config, notion);
+            Local.add(config, notion);
         });
-    db.command("rm")
+    local
+        .command("rm")
         .description("Remove a database from the list")
         .action(async () => {
-            /* TODO */
+            Local.remove(config);
         });
-    db.command("list")
+    local
+        .command("list")
         .description("List all databases in the list")
         .action(() => {
-            /* TODO */
+            Local.list(config);
         });
-    db.command("sync")
+    local
+        .command("sync")
         .description(
             "Sync the title and properties of the databases in the list with their counterparts on notion",
         )
         .action(async () => {
-            /* TODO */
+            Local.sync(config, notion);
         });
-    db.command("new")
+
+    const remote = app
+        .command("remote")
+        .description("Manipulate remote databases");
+
+    remote
+        .command("new")
         .description(
-            "Create a new database with all the languages the other databases have.",
+            "Create a new remote database with all the languages the other databases have.",
         )
         .argument("name", "The name of the database to create")
         .action(async (arg) => {
             /* TODO */
         });
 
-    db.command("normalize")
+    remote
+        .command("normalize")
         .description(
             "Normalize the databases so that they all have the same languages (Only adds languages to databases, doesn't delete any)",
         )

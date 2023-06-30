@@ -39,3 +39,19 @@ export async function add(config: Config, client: Client) {
     );
     config.add_databases(arr);
 }
+
+export async function remove(config: Config) {
+    notImplementedYet(
+        "TODO: List databases in config and allow for removing one/multiple",
+    );
+}
+
+export async function list(config: Config) {
+    notImplementedYet("TODO: List databases in config");
+}
+
+export async function sync(config: Config, client: Client) {
+    notImplementedYet(
+        "TODO: Update names in the config with the names in notion. Also allow for removing databases that no longer exist on notion",
+    );
+}
