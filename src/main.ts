@@ -47,24 +47,34 @@ export default async function main(): Promise<number> {
 
     db.command("add")
         .description("Add new databases to the list")
-        .action(async () => {});
+        .action(async () => {
+            /* TODO */
+        });
     db.command("rm")
         .description("Remove a database from the list")
-        .action(async () => {});
+        .action(async () => {
+            /* TODO */
+        });
     db.command("list")
         .description("List all databases in the list")
-        .action(() => {});
+        .action(() => {
+            /* TODO */
+        });
     db.command("sync")
         .description(
             "Sync the title and properties of the databases in the list with their counterparts on notion",
         )
-        .action(async () => {});
+        .action(async () => {
+            /* TODO */
+        });
     db.command("new")
         .description(
             "Create a new database with all the languages the other databases have.",
         )
         .argument("name", "The name of the database to create")
-        .action(async (arg) => {});
+        .action(async (arg) => {
+            /* TODO */
+        });
 
     db.command("normalize")
         .description(
@@ -74,7 +84,9 @@ export default async function main(): Promise<number> {
             "--dry-run",
             "Print the updates to be performed, but don't perform them",
         )
-        .action(async (options) => {});
+        .action(async (options) => {
+            /* TODO */
+        });
     // TODO: 'lang <name>' -> create a new property (row) in all databases.
     // TODO: 'import <name> <file>' -> takes a .json and creates a new database with a specified name and inserts the values from the json
 
@@ -89,7 +101,9 @@ export default async function main(): Promise<number> {
             "-c, --category",
             "Add each table as a 'category' in the generated files (A nesting level).",
         )
-        .action(async (_, opt) => {});
+        .action(async (_, opt) => {
+            /* TODO */
+        });
 
     await app.parseAsync(process.argv);
 

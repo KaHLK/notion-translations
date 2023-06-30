@@ -1,1 +1,1 @@
-export const CONFIG_FILE = "notion-translate.json"
+export const CONFIG_FILE = "notion-translate.json";
