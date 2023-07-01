@@ -49,13 +49,13 @@ export default async function main(): Promise<number> {
         .command("add")
         .description("Add new databases to the list")
         .action(async () => {
-            Local.add(config, notion);
+            await Local.add(config, notion);
         });
     local
         .command("rm")
         .description("Remove a database from the list")
         .action(async () => {
-            Local.remove(config);
+            await Local.remove(config);
         });
     local
         .command("list")
@@ -69,7 +69,7 @@ export default async function main(): Promise<number> {
             "Sync the title and properties of the databases in the list with their counterparts on notion",
         )
         .action(async () => {
-            Local.sync(config, notion);
+            await Local.sync(config, notion);
         });
 
     const remote = app
