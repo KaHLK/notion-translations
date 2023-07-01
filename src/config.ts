@@ -4,28 +4,17 @@ import { CONFIG_FILE } from "./constants";
 import { Database } from "./model";
 import { exists } from "./util/fs";
 import { Result, err, ok } from "./util/result";
-
-type NonFunctionMembers<T> = {
-    [P in keyof T as T[P] extends Function ? never : P]: T[P];
-};
-
-type Writable<T> = {
-    -readonly [P in keyof T]: Writable<T[P]>;
-};
+import { NonFunctionMembers, Writable } from "./util/types";
 
 type ConfigJson = Partial<Writable<NonFunctionMembers<Config>>>;
 
 export class Config {
     out: string;
-    #databases: Database[];
-
-    get databases(): readonly Database[] {
-        return this.#databases;
-    }
+    databases: Database[];
 
     private constructor(out: string, databases: Database[]) {
         this.out = out;
-        this.#databases = databases;
+        this.databases = databases;
     }
 
     /**
@@ -74,12 +63,12 @@ export class Config {
     }
 
     add_databases(databases: Database[]) {
-        this.#databases = this.#databases.filter(
+        this.databases = this.databases.filter(
             (d) => !databases.some((db) => db.id === d.id),
         );
-        this.#databases.push(...databases);
+        this.databases.push(...databases);
     }
     update_database(index: number, db: Database) {
-        this.#databases[index] = db;
+        this.databases[index] = db;
     }
 }
