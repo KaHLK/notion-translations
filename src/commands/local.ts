@@ -48,7 +48,7 @@ export async function remove(config: Config) {
 
     const arr = await select_from_list(
         "Pick the databases you want to remove",
-        config.databases.map((db) => ({ title: db.id, value: db })),
+        config.databases.map((db) => ({ title: db.name, value: db })),
     );
 
     for (const db of arr) {
