@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { get_databases } from "../api";
 import { Config } from "../config";
 import { Database } from "../model";
-import { choose } from "../util/cli";
+import { select_from_list } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 
 export async function add(config: Config, client: Client) {
@@ -32,11 +32,11 @@ export async function add(config: Config, client: Client) {
         notImplementedYet("TODO: Ask if the user want to add the single table");
     }
 
-    const arr = choose(
+    const arr = await select_from_list(
         "Multiple tables found. Please pick the ones you want to process",
-        available,
-        (v, idx) => `${chalk.cyan(idx + 1)}: ${chalk.redBright(v.name)}`,
+        available.map((db) => ({ title: db.name, value: db })),
     );
+
     config.add_databases(arr);
 }
 
