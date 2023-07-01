@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { get_databases } from "../api";
 import { Config } from "../config";
 import { Database } from "../model";
-import { select_from_list } from "../util/cli";
+import { select_from_list, confirm } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 
 export async function add(config: Config, client: Client) {
@@ -28,8 +28,21 @@ export async function add(config: Config, client: Client) {
         }
     }
 
+    if (available.length === 0) {
+        console.warn(
+            "All databases shared with this integration is already saved locally. To see all databases use the 'local list'-command",
+        );
+        return;
+    }
+
     if (available.length === 1) {
-        notImplementedYet("TODO: Ask if the user want to add the single table");
+        const answer = await confirm(
+            `Found one database (${available[0].name}). Do you want to add it?`,
+        );
+        if (answer) {
+            config.add_databases(available);
+        }
+        return;
     }
 
     const arr = await select_from_list(
@@ -43,6 +56,16 @@ export async function add(config: Config, client: Client) {
 export async function remove(config: Config) {
     if (config.databases.length === 0) {
         console.warn("No databases to remove.");
+        return;
+    }
+
+    if (config.databases.length === 1) {
+        const answer = await confirm(
+            `One database saved. Do you want to delete '${config.databases[0].name}'?`,
+        );
+        if (answer) {
+            config.remove_database_at(0);
+        }
         return;
     }
 

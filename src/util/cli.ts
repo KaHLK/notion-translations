@@ -13,14 +13,17 @@ type ParseFn = (
 export async function select_from_list<T>(
     msg: string,
     list: { title: string; value: T }[],
-    name = "",
 ): Promise<T[]> {
     const res = await prompts({
         type: "autocompleteMultiselect",
-        name,
+        name: "",
         message: msg,
         choices: list,
     });
+    return res[""] as T[];
+}
 
-    return res[name] as T[];
+export async function confirm(msg: string): Promise<boolean> {
+    const res = await prompts({ type: "confirm", message: msg, name: "" });
+    return res[""] as boolean;
 }
