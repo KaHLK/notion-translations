@@ -68,7 +68,7 @@ export class Config {
         );
         this.databases.push(...databases);
     }
-    update_database(index: number, db: Database) {
+    update_database_at(index: number, db: Database) {
         this.databases[index] = db;
     }
 }

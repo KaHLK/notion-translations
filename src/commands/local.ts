@@ -22,7 +22,7 @@ export async function add(config: Config, client: Client) {
         const idx = config.databases.findIndex((t) => t.id === db.id);
         const database: Database = { id: db.id, name: db.title[0].plain_text };
         if (idx >= 0) {
-            config.update_database(idx, database);
+            config.update_database_at(idx, database);
         } else {
             available.push(database);
         }
