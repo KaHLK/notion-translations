@@ -41,13 +41,31 @@ export async function add(config: Config, client: Client) {
 }
 
 export async function remove(config: Config) {
-    notImplementedYet(
-        "TODO: List databases in config and allow for removing one/multiple",
+    if (config.databases.length === 0) {
+        console.warn("No databases to remove.");
+        return;
+    }
+
+    const arr = await select_from_list(
+        "Pick the databases you want to remove",
+        config.databases.map((db) => ({ title: db.id, value: db })),
     );
+
+    for (const db of arr) {
+        config.remove_database(db);
+    }
 }
 
-export async function list(config: Config) {
-    notImplementedYet("TODO: List databases in config");
+export function list(config: Config) {
+    if (config.databases.length === 0) {
+        console.warn("No databases currently used.");
+        return;
+    }
+    console.group("Databases used for generating language files:");
+    for (const db of config.databases) {
+        console.log(`${chalk.cyan(db.name)} (${chalk.red(db.id)})`);
+    }
+    console.groupEnd();
 }
 
 export async function sync(config: Config, client: Client) {

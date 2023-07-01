@@ -71,4 +71,23 @@ export class Config {
     update_database_at(index: number, db: Database) {
         this.databases[index] = db;
     }
+    update_database(db: Database) {
+        const idx = this.databases.findIndex((d) => d.id === db.id);
+        if (idx >= 0) {
+            this.update_database_at(idx, db);
+            return true;
+        }
+        return false;
+    }
+    remove_database_at(index: number) {
+        this.databases.splice(index, 1);
+    }
+    remove_database(db: Database) {
+        const idx = this.databases.findIndex((d) => d.id === db.id);
+        if (idx >= 0) {
+            this.remove_database_at(idx);
+            return true;
+        }
+        return false;
+    }
 }
