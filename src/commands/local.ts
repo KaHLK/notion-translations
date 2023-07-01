@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { get_databases } from "../api";
 import { Config } from "../config";
 import { Database } from "../model";
-import { select_from_list, confirm } from "../util/cli";
+import { autocomplete_multiselect, confirm } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 
 export async function add(config: Config, client: Client) {
@@ -45,7 +45,7 @@ export async function add(config: Config, client: Client) {
         return;
     }
 
-    const arr = await select_from_list(
+    const arr = await autocomplete_multiselect(
         "Multiple tables found. Please pick the ones you want to process",
         available.map((db) => ({ title: db.name, value: db })),
     );
@@ -69,7 +69,7 @@ export async function remove(config: Config) {
         return;
     }
 
-    const arr = await select_from_list(
+    const arr = await autocomplete_multiselect(
         "Pick the databases you want to remove",
         config.databases.map((db) => ({ title: db.name, value: db })),
     );

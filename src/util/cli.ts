@@ -1,6 +1,6 @@
 import prompts from "prompts";
 
-export async function select_from_list<T>(
+export async function autocomplete_multiselect<T>(
     msg: string,
     list: { title: string; value: T }[],
 ): Promise<T[]> {
