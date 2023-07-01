@@ -90,4 +90,7 @@ export class Config {
         }
         return false;
     }
+    remove_all_databases() {
+        this.databases = [];
+    }
 }

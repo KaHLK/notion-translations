@@ -5,7 +5,6 @@ import { get_databases } from "../api";
 import { Config } from "../config";
 import { Database } from "../model";
 import { autocomplete_multiselect, confirm } from "../util/cli";
-import { notImplementedYet } from "../util/fn";
 
 export async function add(config: Config, client: Client) {
     const databases = (await get_databases(client)).unwrap();
@@ -92,7 +91,52 @@ export function list(config: Config) {
 }
 
 export async function sync(config: Config, client: Client) {
-    notImplementedYet(
-        "TODO: Update names in the config with the names in notion. Also allow for removing databases that no longer exist on notion",
+    const databases = (await get_databases(client)).unwrap();
+
+    if (databases.length === 0) {
+        if (config.databases.length > 0) {
+            const answer = await confirm(
+                "All of the local databases are no longer shared with this integration. Do you want to remove them?",
+                true,
+            );
+            if (answer) {
+                config.remove_all_databases();
+            }
+        } else {
+            console.error(
+                "No tables shared with this integration. Add some through the notion ui",
+            );
+        }
+        return;
+    }
+
+    let i = 0;
+    let deleted = 0;
+    for (const db of config.databases) {
+        const updated = databases.find((d) => d.id === db.id);
+        if (!updated) {
+            const answer = await confirm(
+                `Database '${chalk.cyan(
+                    db.name,
+                )}' is no longer shared with this database. Do you want to delete it locally?`,
+                true,
+            );
+
+            if (answer) {
+                config.remove_database(db);
+                deleted++;
+            }
+            continue;
+        }
+        config.update_database({
+            id: updated.id,
+            name: updated.title[0].plain_text,
+        });
+        i++;
+    }
+    console.log(
+        `Updated ${i} databases${
+            deleted > 0 ? ` and deleted ${deleted} databases locally` : ""
+        }`,
     );
 }

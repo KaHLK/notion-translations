@@ -13,7 +13,15 @@ export async function autocomplete_multiselect<T>(
     return res[""] as T[];
 }
 
-export async function confirm(msg: string): Promise<boolean> {
-    const res = await prompts({ type: "confirm", message: msg, name: "" });
+export async function confirm(
+    msg: string,
+    initial?: boolean,
+): Promise<boolean> {
+    const res = await prompts({
+        type: "confirm",
+        message: msg,
+        name: "",
+        initial,
+    });
     return res[""] as boolean;
 }
