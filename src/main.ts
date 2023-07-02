@@ -81,10 +81,9 @@ export default async function main(): Promise<number> {
         .description(
             "Create a new remote database with all the languages the other databases have.",
         )
-        .argument("name", "The name of the database to create")
-        .action(async (name) => {
-            // TODO: Pass in arguments
-            await Remote.new_database(config, notion);
+        .option("--name <name>", "The name of the database to create")
+        .action(async (options) => {
+            await Remote.new_database(config, notion, options.name);
         });
 
     remote

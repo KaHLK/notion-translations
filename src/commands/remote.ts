@@ -1,16 +1,117 @@
 import { Client } from "@notionhq/client";
+import {
+    CreateDatabaseParameters,
+    DatabaseObjectResponse,
+    PageObjectResponse,
+} from "@notionhq/client/build/src/api-endpoints";
 
+import {
+    DatabaseUpdate,
+    create_database,
+    get_database,
+    get_pages,
+    update_database,
+} from "../api";
 import { Config } from "../config";
-import { notImplementedYet } from "../util/fn";
-import { DatabaseUpdate, get_database, update_database } from "../api";
-import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { Database, database_object_to_database } from "../model";
-import { confirm } from "../util/cli";
+import { autocomplete, confirm, get_text } from "../util/cli";
+import { notImplementedYet } from "../util/fn";
 
-export async function new_database(config: Config, client: Client) {
-    notImplementedYet(
-        "TODO: Create a new remote database in notion, with all of the same properties of the other databases in the config. If the databases are not normalized, ask if the fields should be merged or fail/stop",
+async function get_local_databases(
+    config: Config,
+    client: Client,
+): Promise<DatabaseObjectResponse[]> {
+    const dbs: DatabaseObjectResponse[] = [];
+    for (const db of config.databases) {
+        const res = await get_database(client, db.id);
+        if (res.isOk()) {
+            dbs.push(res.value);
+        } else {
+            // TODO: Handle errors
+        }
+    }
+    return dbs;
+}
+
+function get_all_properties(dbs: DatabaseObjectResponse[]): Set<string> {
+    return new Set(
+        dbs.flatMap((db) =>
+            Object.values(db.properties)
+                .filter((prop) => prop.type === "rich_text")
+                .map((prop) => prop.name),
+        ),
     );
+}
+
+type Property = CreateDatabaseParameters["properties"][string];
+export async function new_database(
+    config: Config,
+    client: Client,
+    name?: string,
+) {
+    const dbs = await get_local_databases(config, client);
+    const properties = get_all_properties(dbs);
+
+    let _name = name;
+    if (!_name) {
+        _name = await get_text("What should the new database be named?");
+    }
+
+    const pages = await get_pages(client);
+    if (pages.isErr()) {
+        // TODO: Handle error
+        return;
+    }
+    if (pages.value.length === 0) {
+        console.warn(
+            "No 'non-database child'-pages are shared with this integration.",
+        );
+        return;
+    }
+    const parent = await autocomplete(
+        "What should be the parent of the new database?",
+        pages.value.map((page) => {
+            const title = Object.values(page.properties).filter(
+                (prop) => prop.type === "title",
+            )[0] as Extract<
+                PageObjectResponse["properties"][string],
+                { type: "title" }
+            >;
+            return { title: title.title[0].plain_text, value: page.id };
+        }),
+    );
+
+    console.log(`Creating new database '${_name}'`);
+    const props: [string, Property][] = [
+        ["key", { type: "title", title: {} }],
+        ["context", { type: "rich_text", rich_text: {} }],
+        ...Array.from(properties).map<[string, Property]>((prop) => [
+            prop,
+            { type: "rich_text", rich_text: {} },
+        ]),
+    ];
+    const database: CreateDatabaseParameters = {
+        parent: { page_id: parent },
+        title: [
+            {
+                text: {
+                    content: _name,
+                },
+            },
+        ],
+        properties: Object.fromEntries(props),
+    };
+
+    const res = await create_database(client, database);
+
+    if (res.isErr()) {
+        // TODO: handle error
+        return;
+    }
+
+    console.log("Successfully created database. Saving locally");
+
+    config.add_databases([database_object_to_database(res.value)]);
 }
 
 type NormalizationAction =
@@ -24,24 +125,8 @@ export async function normalize(
     client: Client,
     options: NormalizeOptions,
 ) {
-    const dbs: DatabaseObjectResponse[] = [];
-    for (const db of config.databases) {
-        const res = await get_database(client, db.id);
-        if (res.isOk()) {
-            dbs.push(res.value);
-        } else {
-            // TODO: Handle errors
-        }
-    }
-    const properties: Set<string> = new Set();
-    for (const db of dbs) {
-        for (const prop of Object.values(db.properties)) {
-            if (prop.type !== "rich_text") {
-                continue;
-            }
-            properties.add(prop.name);
-        }
-    }
+    const dbs = await get_local_databases(config, client);
+    const properties = get_all_properties(dbs);
     const all_properties = Array.from(properties).concat("context");
 
     const missing_properties = dbs

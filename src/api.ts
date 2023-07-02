@@ -1,6 +1,8 @@
 import { Client, collectPaginatedAPI } from "@notionhq/client";
 import {
+    CreateDatabaseParameters,
     DatabaseObjectResponse,
+    PageObjectResponse,
     UpdateDatabaseParameters,
 } from "@notionhq/client/build/src/api-endpoints";
 
@@ -41,6 +43,26 @@ export async function get_database(
     }
 }
 
+export async function create_database(
+    client: Client,
+    db: CreateDatabaseParameters,
+): Promise<Result<DatabaseObjectResponse, Error>> {
+    try {
+        const res = await client.databases.create(db);
+        return ok(res as DatabaseObjectResponse);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to create database '${
+                    (db.title?.[0] as { text: { content: string } }).text
+                        .content
+                }`,
+            ),
+        );
+    }
+}
+
 export type DatabaseUpdate = Omit<UpdateDatabaseParameters, "database_id">;
 export async function update_database(
     client: Client,
@@ -57,6 +79,28 @@ export async function update_database(
     } catch (e) {
         return err(
             map_error(e, `Error occurred trying to update database'${id}'`),
+        );
+    }
+}
+
+export async function get_pages(
+    client: Client,
+): Promise<Result<PageObjectResponse[], Error>> {
+    try {
+        const res = (
+            (await collectPaginatedAPI(client.search, {
+                filter: { property: "object", value: "page" },
+            })) as PageObjectResponse[]
+        ).filter(
+            (page) => page.parent.type !== "database_id" && !page.archived,
+        );
+        return ok(res);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                "Error occurred trying to get all pages shared with this integration.",
+            ),
         );
     }
 }
