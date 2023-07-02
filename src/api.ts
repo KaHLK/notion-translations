@@ -15,7 +15,7 @@ export async function get_databases(
             filter: { value: "database", property: "object" },
         })) as DatabaseObjectResponse[];
 
-        return ok(res);
+        return ok(res.filter((db) => !db.archived));
     } catch (e) {
         return err(
             map_error(
