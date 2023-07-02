@@ -112,7 +112,8 @@ export async function sync(config: Config, client: Client) {
 
     let i = 0;
     let deleted = 0;
-    for (const db of config.databases) {
+    for (let j = 0; j < config.databases.length; j++) {
+        const db = config.databases[j];
         const updated = databases.find((d) => d.id === db.id);
         if (!updated) {
             const answer = await confirm(
@@ -125,6 +126,7 @@ export async function sync(config: Config, client: Client) {
             if (answer) {
                 config.remove_database(db);
                 deleted++;
+                j--;
             }
             continue;
         }
