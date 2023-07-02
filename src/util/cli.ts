@@ -1,22 +1,28 @@
 import prompts from "prompts";
 
+import { Option, none, some } from "./option";
+
 export async function autocomplete_multiselect<T>(
     msg: string,
     list: { title: string; value: T }[],
-): Promise<T[]> {
+): Promise<Option<T[]>> {
     const res = await prompts({
         type: "autocompleteMultiselect",
         name: "",
         message: msg,
         choices: list,
     });
-    return res[""] as T[];
+    const v = res[""] as T[];
+    if (v === undefined) {
+        return none();
+    }
+    return some(v);
 }
 
 export async function autocomplete<T>(
     msg: string,
     list: { title: string; value: T }[],
-): Promise<T> {
+): Promise<Option<T>> {
     const res = await prompts({
         type: "autocomplete",
         name: "",
@@ -24,28 +30,40 @@ export async function autocomplete<T>(
         choices: list,
     });
 
-    return res[""];
+    const v = res[""];
+    if (v === undefined) {
+        return none();
+    }
+    return some(v);
 }
 
 export async function confirm(
     msg: string,
     initial?: boolean,
-): Promise<boolean> {
+): Promise<Option<boolean>> {
     const res = await prompts({
         type: "confirm",
         message: msg,
         name: "",
         initial,
     });
-    return res[""] as boolean;
+    const v = res[""] as boolean;
+    if (v === undefined) {
+        return none();
+    }
+    return some(v);
 }
 
-export async function get_text(msg: string): Promise<string> {
+export async function get_text(msg: string): Promise<Option<string>> {
     const res = await prompts({
         type: "text",
         name: "",
         message: msg,
     });
 
-    return res[""] as string;
+    const v = res[""] as string;
+    if (v === undefined) {
+        return none();
+    }
+    return some(v);
 }

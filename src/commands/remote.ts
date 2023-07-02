@@ -63,7 +63,9 @@ export async function new_database(
 
     let _name = name;
     if (!_name) {
-        _name = await get_text("What should the new database be named?");
+        _name = (
+            await get_text("What should the new database be named?")
+        ).expect("Expected a name to be entered. Exiting");
     }
 
     const pages = await get_pages(client);
@@ -80,18 +82,20 @@ export async function new_database(
         );
         return;
     }
-    const parent = await autocomplete(
-        "What should be the parent of the new database?",
-        pages.value.map((page) => {
-            const title = Object.values(page.properties).filter(
-                (prop) => prop.type === "title",
-            )[0] as Extract<
-                PageObjectResponse["properties"][string],
-                { type: "title" }
-            >;
-            return { title: title.title[0].plain_text, value: page.id };
-        }),
-    );
+    const parent = (
+        await autocomplete(
+            "What should be the parent of the new database?",
+            pages.value.map((page) => {
+                const title = Object.values(page.properties).filter(
+                    (prop) => prop.type === "title",
+                )[0] as Extract<
+                    PageObjectResponse["properties"][string],
+                    { type: "title" }
+                >;
+                return { title: title.title[0].plain_text, value: page.id };
+            }),
+        )
+    ).expect("Expected a page to be selected. Exiting");
 
     console.log(`Creating new database '${_name}'`);
     const props: [string, Property][] = [
