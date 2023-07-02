@@ -17,6 +17,7 @@ import { Database, database_object_to_database } from "../model";
 import { autocomplete, confirm, get_text } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 import { Result, err, ok } from "../util/result";
+import { Option, none, some } from "../util/option";
 
 async function get_local_databases(
     config: Config,
@@ -44,6 +45,65 @@ function get_all_properties(dbs: DatabaseObjectResponse[]): Set<string> {
     );
 }
 
+async function get_parent_page(client: Client): Promise<Option<string>> {
+    const pages = await get_pages(client);
+    if (pages.isErr()) {
+        console.error(
+            "Failed to get pages shared with this integration",
+            pages.error,
+        );
+        return none();
+    }
+    if (pages.value.length === 0) {
+        console.warn(
+            "No 'non-database child'-pages are shared with this integration.",
+        );
+        return none();
+    }
+    return some(
+        (
+            await autocomplete(
+                "What should be the parent of the new database?",
+                pages.value.map((page) => {
+                    const title = Object.values(page.properties).filter(
+                        (prop) => prop.type === "title",
+                    )[0] as Extract<
+                        PageObjectResponse["properties"][string],
+                        { type: "title" }
+                    >;
+                    return { title: title.title[0].plain_text, value: page.id };
+                }),
+            )
+        ).expect("Expected a page to be selected. Exiting"),
+    );
+}
+
+function construct_database_request(
+    parent: string,
+    name: string,
+    properties: Set<string>,
+): CreateDatabaseParameters {
+    const props: [string, Property][] = [
+        ["key", { type: "title", title: {} }],
+        ["context", { type: "rich_text", rich_text: {} }],
+        ...Array.from(properties).map<[string, Property]>((prop) => [
+            prop,
+            { type: "rich_text", rich_text: {} },
+        ]),
+    ];
+    return {
+        parent: { page_id: parent },
+        title: [
+            {
+                text: {
+                    content: name,
+                },
+            },
+        ],
+        properties: Object.fromEntries(props),
+    };
+}
+
 type Property = CreateDatabaseParameters["properties"][string];
 export async function new_database(
     config: Config,
@@ -68,55 +128,10 @@ export async function new_database(
         ).expect("Expected a name to be entered. Exiting");
     }
 
-    const pages = await get_pages(client);
-    if (pages.isErr()) {
-        console.error(
-            "Failed to get pages shared with this integration",
-            pages.error,
-        );
-        return;
-    }
-    if (pages.value.length === 0) {
-        console.warn(
-            "No 'non-database child'-pages are shared with this integration.",
-        );
-        return;
-    }
-    const parent = (
-        await autocomplete(
-            "What should be the parent of the new database?",
-            pages.value.map((page) => {
-                const title = Object.values(page.properties).filter(
-                    (prop) => prop.type === "title",
-                )[0] as Extract<
-                    PageObjectResponse["properties"][string],
-                    { type: "title" }
-                >;
-                return { title: title.title[0].plain_text, value: page.id };
-            }),
-        )
-    ).expect("Expected a page to be selected. Exiting");
+    const parent = (await get_parent_page(client)).unwrap();
 
     console.log(`Creating new database '${_name}'`);
-    const props: [string, Property][] = [
-        ["key", { type: "title", title: {} }],
-        ["context", { type: "rich_text", rich_text: {} }],
-        ...Array.from(properties).map<[string, Property]>((prop) => [
-            prop,
-            { type: "rich_text", rich_text: {} },
-        ]),
-    ];
-    const database: CreateDatabaseParameters = {
-        parent: { page_id: parent },
-        title: [
-            {
-                text: {
-                    content: _name,
-                },
-            },
-        ],
-        properties: Object.fromEntries(props),
-    };
+    const database = construct_database_request(parent, _name, properties);
 
     const res = await create_database(client, database);
 
