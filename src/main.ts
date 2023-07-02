@@ -96,7 +96,6 @@ export default async function main(): Promise<number> {
             "Print the updates to be performed, but don't perform them",
         )
         .action(async (options) => {
-            // TODO: Pass in arguments
             await Remote.normalize(config, notion, options);
         });
 
