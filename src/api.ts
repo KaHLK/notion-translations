@@ -53,7 +53,6 @@ export async function update_database(
             ...update,
         });
 
-        console.log(res);
         return ok(null);
     } catch (e) {
         return err(
