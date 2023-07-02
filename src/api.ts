@@ -17,7 +17,7 @@ export async function get_databases(
         return err(
             map_error(
                 e,
-                "Error accurred trying to get all databases shared with this integration",
+                "Error occurred trying to get all databases shared with this integration",
             ),
         );
     }
