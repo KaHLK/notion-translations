@@ -16,21 +16,22 @@ import { Config } from "../config";
 import { Database, database_object_to_database } from "../model";
 import { autocomplete, confirm, get_text } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
+import { Result, err, ok } from "../util/result";
 
 async function get_local_databases(
     config: Config,
     client: Client,
-): Promise<DatabaseObjectResponse[]> {
+): Promise<Result<DatabaseObjectResponse[], Error>> {
     const dbs: DatabaseObjectResponse[] = [];
     for (const db of config.databases) {
         const res = await get_database(client, db.id);
         if (res.isOk()) {
             dbs.push(res.value);
         } else {
-            // TODO: Handle errors
+            return err(res.error);
         }
     }
-    return dbs;
+    return ok(dbs);
 }
 
 function get_all_properties(dbs: DatabaseObjectResponse[]): Set<string> {
@@ -49,8 +50,16 @@ export async function new_database(
     client: Client,
     name?: string,
 ) {
+    if (config.databases.length === 0) {
+        console.warn("No databases saved locally. Exiting");
+        return;
+    }
     const dbs = await get_local_databases(config, client);
-    const properties = get_all_properties(dbs);
+    if (dbs.isErr()) {
+        console.error("Failed to get database information", dbs.error);
+        return;
+    }
+    const properties = get_all_properties(dbs.value);
 
     let _name = name;
     if (!_name) {
@@ -59,7 +68,10 @@ export async function new_database(
 
     const pages = await get_pages(client);
     if (pages.isErr()) {
-        // TODO: Handle error
+        console.error(
+            "Failed to get pages shared with this integration",
+            pages.error,
+        );
         return;
     }
     if (pages.value.length === 0) {
@@ -105,7 +117,7 @@ export async function new_database(
     const res = await create_database(client, database);
 
     if (res.isErr()) {
-        // TODO: handle error
+        console.error("Failed to create database", res.error);
         return;
     }
 
@@ -125,11 +137,19 @@ export async function normalize(
     client: Client,
     options: NormalizeOptions,
 ) {
+    if (config.databases.length === 0) {
+        console.warn("No databases saved locally. Exiting");
+        return;
+    }
     const dbs = await get_local_databases(config, client);
-    const properties = get_all_properties(dbs);
+    if (dbs.isErr()) {
+        console.error("Failed to get database information", dbs.error);
+        return;
+    }
+    const properties = get_all_properties(dbs.value);
     const all_properties = Array.from(properties).concat("context");
 
-    const missing_properties = dbs
+    const missing_properties = dbs.value
         .map<[Database, NormalizationAction[]]>((db) => {
             const properties = Object.values(db.properties);
             const missing: NormalizationAction[] = [];
@@ -227,7 +247,6 @@ export async function normalize(
         const res = await update_database(client, db.id, db_update);
         if (res.isErr()) {
             console.error(res.err);
-            // TODO: Handle errors
         }
     }
 }
