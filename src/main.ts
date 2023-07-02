@@ -1,5 +1,5 @@
 import { Client } from "@notionhq/client";
-import { Command } from "commander";
+import { Argument, Command, Option } from "commander";
 import dotenv from "dotenv";
 
 import { Local, Remote, Util } from "./commands";
@@ -101,17 +101,20 @@ export default async function main(): Promise<number> {
 
     remote
         .command("import")
-        .description(
-            "Create a new database with the values from a json or xml file.",
-        )
+        .description("Create a new database with the values from a json file.")
         .argument("file", "Name of the file to import")
         .option(
             "--append [id]",
             "Append the imported values to an existing database",
         )
-        .action(async (file, options) => {
-            // TODO: Pass in arguments
-            await Remote.new_from_import(config, notion);
+        .addArgument(
+            new Argument(
+                "format",
+                "The format to use for parsing the file",
+            ).choices(Remote.import_formats),
+        )
+        .action(async (file, format, options) => {
+            await Remote.new_from_import(config, notion, file, format, options);
         });
     // TODO: 'lang <name>' -> create a new property (row) in all databases.
 

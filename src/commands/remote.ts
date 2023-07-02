@@ -18,6 +18,7 @@ import { autocomplete, confirm, get_text } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 import { Result, err, ok } from "../util/result";
 import { Option, none, some } from "../util/option";
+import { ImportFormat, parse_file } from "./remote/parse";
 
 async function get_local_databases(
     config: Config,
@@ -270,8 +271,59 @@ export async function normalize(
     }
 }
 
-export async function new_from_import(config: Config, client: Client) {
-    notImplementedYet(
-        "TODO: Create a new database(s) from an imported file (should support json and xml)",
-    );
+export { import_formats } from "./remote/parse";
+type ImportOptions = {
+    append?: string;
+};
+export async function new_from_import(
+    config: Config,
+    client: Client,
+    file_path: string,
+    format: ImportFormat,
+    options: ImportOptions,
+) {
+    const a = await parse_file(file_path, format);
+    if (a.isNone()) {
+        return;
+    }
+    let parent_id: string;
+    if (!options.append) {
+        let db_name = file_path.split(".").filter((v) => v.length > 0)[0];
+        const answer = (
+            await confirm(
+                `About to create database with name ${db_name}. Do you want to change the name?`,
+            )
+        ).expect("Expected y/n to be chosen. Exiting");
+        if (answer) {
+            db_name = (
+                await get_text("Please enter the desired database name")
+            ).expect("Expected name to be entered. Exiting");
+        }
+        const dbs = await get_local_databases(config, client);
+        if (dbs.isErr()) {
+            console.error("Failed to get database information", dbs.error);
+            return;
+        }
+        const properties = get_all_properties(dbs.value);
+        const parent = (await get_parent_page(client)).unwrap();
+        console.log(`Creating new database '${db_name}'`);
+        const database = construct_database_request(
+            parent,
+            db_name,
+            properties,
+        );
+
+        const res = await create_database(client, database);
+        if (res.isErr()) {
+            console.error(`Failed to create database ${db_name}`, res.error);
+            return;
+        }
+        parent_id = res.value.id;
+    } else {
+        parent_id = options.append;
+    }
+
+    // TODO: Create pages
+
+    notImplementedYet("TODO: Create a new database from an imported file");
 }

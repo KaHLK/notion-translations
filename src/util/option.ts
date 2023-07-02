@@ -109,6 +109,16 @@ abstract class OptionImpl<T> {
         return none();
     }
 
+    async andThenAsync<U>(
+        this: Option<T>,
+        cb: (v: T) => Promise<Option<U>>,
+    ): Promise<Option<U>> {
+        if (this.isSome()) {
+            return cb(this.value);
+        }
+        return none();
+    }
+
     filter(this: Option<T>, predicate: (v: T) => boolean): Option<T> {
         if (this.isSomeAnd(predicate)) {
             return this;
@@ -177,6 +187,14 @@ abstract class OptionImpl<T> {
             return err(this.value.error);
         }
         return ok(none());
+    }
+
+    async asyncTranspose<T>(this: Option<Promise<T>>): Promise<Option<T>> {
+        if (this.isSome()) {
+            const value = await this.value;
+            return some(value);
+        }
+        return none();
     }
 
     /* Missing functions:
