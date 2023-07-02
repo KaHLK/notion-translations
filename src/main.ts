@@ -2,7 +2,7 @@ import { Client } from "@notionhq/client";
 import { Command } from "commander";
 import dotenv from "dotenv";
 
-import { Local, Util } from "./commands";
+import { Local, Remote, Util } from "./commands";
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
 
@@ -82,8 +82,9 @@ export default async function main(): Promise<number> {
             "Create a new remote database with all the languages the other databases have.",
         )
         .argument("name", "The name of the database to create")
-        .action(async (arg) => {
-            /* TODO */
+        .action(async (name) => {
+            // TODO: Pass in arguments
+            await Remote.new_database(config, notion);
         });
 
     remote
@@ -92,14 +93,29 @@ export default async function main(): Promise<number> {
             "Normalize the databases so that they all have the same languages (Only adds languages to databases, doesn't delete any)",
         )
         .option(
-            "--dry-run",
+            "-d, --dry-run",
             "Print the updates to be performed, but don't perform them",
         )
         .action(async (options) => {
-            /* TODO */
+            // TODO: Pass in arguments
+            await Remote.normalize(config, notion, options);
+        });
+
+    remote
+        .command("import")
+        .description(
+            "Create a new database with the values from a json or xml file.",
+        )
+        .argument("file", "Name of the file to import")
+        .option(
+            "--append [id]",
+            "Append the imported values to an existing database",
+        )
+        .action(async (file, options) => {
+            // TODO: Pass in arguments
+            await Remote.new_from_import(config, notion);
         });
     // TODO: 'lang <name>' -> create a new property (row) in all databases.
-    // TODO: 'import <name> <file>' -> takes a .json and creates a new database with a specified name and inserts the values from the json
 
     app.command("gen")
         .description("Generate language files from the tables in notion")
@@ -112,7 +128,7 @@ export default async function main(): Promise<number> {
             "-c, --category",
             "Add each table as a 'category' in the generated files (A nesting level).",
         )
-        .action(async (_, opt) => {
+        .action(async (options) => {
             /* TODO */
         });
 
