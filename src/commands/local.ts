@@ -3,7 +3,7 @@ import chalk from "chalk";
 
 import { get_databases } from "../api";
 import { Config } from "../config";
-import { Database } from "../model";
+import { Database, database_object_to_database } from "../model";
 import { autocomplete_multiselect, confirm } from "../util/cli";
 
 export async function add(config: Config, client: Client) {
@@ -19,7 +19,7 @@ export async function add(config: Config, client: Client) {
     const available: Database[] = [];
     for (const db of databases) {
         const idx = config.databases.findIndex((t) => t.id === db.id);
-        const database: Database = { id: db.id, name: db.title[0].plain_text };
+        const database: Database = database_object_to_database(db);
         if (idx >= 0) {
             config.update_database_at(idx, database);
         } else {
@@ -128,10 +128,7 @@ export async function sync(config: Config, client: Client) {
             }
             continue;
         }
-        config.update_database({
-            id: updated.id,
-            name: updated.title[0].plain_text,
-        });
+        config.update_database(database_object_to_database(updated));
         i++;
     }
     console.log(
