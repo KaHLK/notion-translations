@@ -1,6 +1,7 @@
 import { Client } from "@notionhq/client";
 import {
     CreateDatabaseParameters,
+    CreatePageParameters,
     DatabaseObjectResponse,
     PageObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints";
@@ -8,6 +9,7 @@ import {
 import {
     DatabaseUpdate,
     create_database,
+    create_page,
     get_database,
     get_pages,
     update_database,
@@ -84,10 +86,10 @@ function construct_database_request(
     name: string,
     properties: Set<string>,
 ): CreateDatabaseParameters {
-    const props: [string, Property][] = [
+    const props: [string, DatabaseProperty][] = [
         ["key", { type: "title", title: {} }],
         ["context", { type: "rich_text", rich_text: {} }],
-        ...Array.from(properties).map<[string, Property]>((prop) => [
+        ...Array.from(properties).map<[string, DatabaseProperty]>((prop) => [
             prop,
             { type: "rich_text", rich_text: {} },
         ]),
@@ -105,7 +107,7 @@ function construct_database_request(
     };
 }
 
-type Property = CreateDatabaseParameters["properties"][string];
+type DatabaseProperty = CreateDatabaseParameters["properties"][string];
 export async function new_database(
     config: Config,
     client: Client,
@@ -272,6 +274,11 @@ export async function normalize(
 }
 
 export { import_formats } from "./remote/parse";
+type DatabasePageProperties = Extract<
+    CreatePageParameters,
+    { parent: { database_id: string } }
+>["properties"];
+type PageProperty = Extract<DatabasePageProperties[string], object>;
 type ImportOptions = {
     append?: string;
 };
@@ -282,12 +289,20 @@ export async function new_from_import(
     format: ImportFormat,
     options: ImportOptions,
 ) {
-    const a = await parse_file(file_path, format);
-    if (a.isNone()) {
+    const units = await parse_file(file_path, format);
+    if (units.isNone()) {
         return;
     }
+
     let parent_id: string;
     if (!options.append) {
+        const dbs = await get_local_databases(config, client);
+        if (dbs.isErr()) {
+            console.error("Failed to get database information", dbs.error);
+            return;
+        }
+        const properties = get_all_properties(dbs.value);
+
         let db_name = file_path.split(".").filter((v) => v.length > 0)[0];
         const answer = (
             await confirm(
@@ -299,12 +314,7 @@ export async function new_from_import(
                 await get_text("Please enter the desired database name")
             ).expect("Expected name to be entered. Exiting");
         }
-        const dbs = await get_local_databases(config, client);
-        if (dbs.isErr()) {
-            console.error("Failed to get database information", dbs.error);
-            return;
-        }
-        const properties = get_all_properties(dbs.value);
+
         const parent = (await get_parent_page(client)).unwrap();
         console.log(`Creating new database '${db_name}'`);
         const database = construct_database_request(
@@ -323,7 +333,41 @@ export async function new_from_import(
         parent_id = options.append;
     }
 
-    // TODO: Create pages
+    let i = 0;
+    for (const unit of units.value) {
+        i++;
+        const props: Extract<
+            CreatePageParameters,
+            { parent: { database_id: string } }
+        >["properties"] = {};
+        props["key"] = {
+            type: "title",
+            title: [{ text: { content: unit.key } }],
+        };
+        props["context"] = {
+            type: "rich_text",
+            rich_text: [{ text: { content: unit.context } }],
+        };
+        for (const [lng, value] of Object.entries(unit.languages)) {
+            props[lng] = {
+                type: "rich_text",
+                rich_text: [{ text: { content: value } }],
+            };
+        }
 
-    notImplementedYet("TODO: Create a new database from an imported file");
+        console.log(
+            `Creating page '${unit.key}' (${i} of ${units.value.length})`,
+        );
+        const res = await create_page(client, {
+            parent: { database_id: parent_id, type: "database_id" },
+            properties: props,
+        });
+        if (res.isErr()) {
+            console.error(
+                `Error occurred trying to create page '${unit.key}'`,
+                res.error,
+            );
+            return;
+        }
+    }
 }

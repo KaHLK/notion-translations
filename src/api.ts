@@ -1,6 +1,7 @@
 import { Client, collectPaginatedAPI } from "@notionhq/client";
 import {
     CreateDatabaseParameters,
+    CreatePageParameters,
     DatabaseObjectResponse,
     PageObjectResponse,
     UpdateDatabaseParameters,
@@ -100,6 +101,27 @@ export async function get_pages(
             map_error(
                 e,
                 "Error occurred trying to get all pages shared with this integration.",
+            ),
+        );
+    }
+}
+
+export async function create_page(
+    client: Client,
+    page: CreatePageParameters,
+): Promise<Result<PageObjectResponse, Error>> {
+    try {
+        const res = await client.pages.create(page);
+        return ok(res as PageObjectResponse);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to create page '${
+                    Object.values(page.properties).find(
+                        (p) => p.type === "title",
+                    )?.title[0].text.content
+                }'`,
             ),
         );
     }

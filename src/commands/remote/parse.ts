@@ -40,7 +40,7 @@ async function read_json(path: string): Promise<Option<unknown>> {
     }
 }
 
-type A = {
+type TranslationUnit = {
     key: string;
     languages: { [lng: string]: string };
     context: string;
@@ -48,7 +48,7 @@ type A = {
 export async function parse_file(
     file_path: string,
     format: ImportFormat,
-): Promise<Option<A[]>> {
+): Promise<Option<TranslationUnit[]>> {
     const res = await (
         await read_json(file_path)
     ).andThenAsync(async (file) => {
@@ -68,7 +68,9 @@ export async function parse_file(
     return res;
 }
 
-async function parse_key_value(file: unknown): Promise<Option<A[]>> {
+async function parse_key_value(
+    file: unknown,
+): Promise<Option<TranslationUnit[]>> {
     if (
         typeof file !== "object" ||
         !Object.values(file as object).every((v) =>
@@ -89,7 +91,7 @@ async function parse_key_value(file: unknown): Promise<Option<A[]>> {
     ).expect("Expected a language to be entered. Exiting");
 
     return some(
-        Object.entries(key_values).map<A>(([key, value]) => {
+        Object.entries(key_values).map<TranslationUnit>(([key, value]) => {
             if (typeof value === "object") {
                 const [_key, v] = Object.entries(value)[0];
                 return {
@@ -108,7 +110,7 @@ async function parse_key_value(file: unknown): Promise<Option<A[]>> {
     );
 }
 
-function parse_aggregate(file: unknown): Option<A[]> {
+function parse_aggregate(file: unknown): Option<TranslationUnit[]> {
     if (
         typeof file !== "object" ||
         !Object.values(file as object).every(
@@ -123,7 +125,7 @@ function parse_aggregate(file: unknown): Option<A[]> {
         return none();
     }
     const aggregate = file as AggregateJSON;
-    const res: A[] = [];
+    const res: TranslationUnit[] = [];
     for (const [key, values] of Object.entries(aggregate)) {
         res.push({ key, languages: values, context: "" });
     }
@@ -131,7 +133,9 @@ function parse_aggregate(file: unknown): Option<A[]> {
     return some(res);
 }
 
-async function parse_poeditor_export(file: unknown): Promise<Option<A[]>> {
+async function parse_poeditor_export(
+    file: unknown,
+): Promise<Option<TranslationUnit[]>> {
     if (
         !Array.isArray(file) ||
         !file.every(
@@ -153,7 +157,7 @@ async function parse_poeditor_export(file: unknown): Promise<Option<A[]>> {
     ).expect("Expected a language to be entered. Exiting");
 
     return some(
-        poe.map<A>((v) => ({
+        poe.map<TranslationUnit>((v) => ({
             context: v.context,
             key: v.term,
             languages: { [lng]: v.definition },
