@@ -106,6 +106,26 @@ export async function get_pages(
     }
 }
 
+export async function get_from_database(
+    client: Client,
+    id: string,
+): Promise<Result<PageObjectResponse[], Error>> {
+    try {
+        const res = await collectPaginatedAPI(client.databases.query, {
+            database_id: id,
+        });
+
+        return ok(res as PageObjectResponse[]);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to get pages from database '${id}'`,
+            ),
+        );
+    }
+}
+
 export async function create_page(
     client: Client,
     page: CreatePageParameters,

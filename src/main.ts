@@ -2,7 +2,7 @@ import { Client } from "@notionhq/client";
 import { Argument, Command, Option } from "commander";
 import dotenv from "dotenv";
 
-import { Local, Remote, Util } from "./commands";
+import { Gen, Local, Remote, Util } from "./commands";
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
 
@@ -129,7 +129,13 @@ export default async function main(): Promise<number> {
             "-c, --category",
             "Add each table as a 'category' in the generated files (A nesting level).",
         )
+        .option(
+            "--ci",
+            "Answers no to all duplicates and lists the missing translations",
+        )
+        .option("-i, --ignore", "Ignore all prompts")
         .action(async (options) => {
+            await Gen.generate(config, notion, options);
             /* TODO */
         });
 
