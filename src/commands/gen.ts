@@ -22,7 +22,6 @@ interface GenerateOptions {
     category?: boolean;
     ci?: boolean;
     ignore?: boolean;
-    dir?: string;
 }
 export async function generate(
     config: Config,
@@ -91,7 +90,7 @@ export async function generate(
             case "android": {
                 str = gen_android(lng);
                 const dir = await get_dir(
-                    options.dir,
+                    config.out,
                     (dir) => `${dir}-${lng_name}`,
                 );
                 path = `${dir}strings.xml`;
@@ -100,7 +99,7 @@ export async function generate(
 
             case "i18next": {
                 str = gen_i18next(lng);
-                path = `${await get_dir(options.dir)}${lng_name}.json`;
+                path = `${await get_dir(config.out)}${lng_name}.json`;
                 break;
             }
         }
