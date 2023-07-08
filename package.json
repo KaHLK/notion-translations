@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node index.js",
     "prestart": "yarn build",
-    "prepare": "tsc -p tsconfig.json"
+    "prepare": "yarn build"
   },
   "devDependencies": {
     "@types/prompts": "2.4.4",
