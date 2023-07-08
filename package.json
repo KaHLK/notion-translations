@@ -9,14 +9,14 @@
     "build": "tsc",
     "start": "node index.js",
     "prestart": "yarn build",
-    "postinstall": "tsc"
+    "prepare": "tsc"
   },
   "devDependencies": {
     "@types/prompts": "2.4.4",
     "rome": "12.1.2",
     "typescript": "5.0.4"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@notionhq/client": "2.2.5",
     "chalk": "4",
     "commander": "10.0.1",
