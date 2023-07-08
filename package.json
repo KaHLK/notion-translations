@@ -13,12 +13,12 @@
   },
   "devDependencies": {
     "@types/prompts": "2.4.4",
-    "chalk": "4",
     "rome": "12.1.2",
     "typescript": "5.0.4"
   },
   "peerDependencies": {
     "@notionhq/client": "2.2.5",
+    "chalk": "4",
     "commander": "10.0.1",
     "dotenv": "16.0.3",
     "prompts": "2.4.2"
