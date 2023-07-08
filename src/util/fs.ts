@@ -1,5 +1,5 @@
 import { constants } from "fs";
-import { access } from "fs/promises";
+import { access, writeFile } from "fs/promises";
 
 export async function exists(path: string): Promise<boolean> {
     try {
@@ -8,4 +8,8 @@ export async function exists(path: string): Promise<boolean> {
     } catch (_) {
         return false;
     }
+}
+
+export async function save(path: string, contents: string) {
+    await writeFile(path, contents, { encoding: "utf8" });
 }

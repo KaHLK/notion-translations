@@ -134,6 +134,10 @@ export default async function main(): Promise<number> {
             "Answers no to all duplicates and lists the missing translations",
         )
         .option("-i, --ignore", "Ignore all prompts")
+        .option(
+            "-d, --dir <directory>",
+            "The directory to save the generated files",
+        )
         .action(async (options) => {
             await Gen.generate(config, notion, options);
             /* TODO */

@@ -1,9 +1,12 @@
 import { Client } from "@notionhq/client";
-import { Config } from "../config";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { mkdir } from "fs/promises";
+
+import { Config } from "../config";
 import { get_from_database } from "../api";
 import { notImplementedYet } from "../util/fn";
 import { confirm } from "../util/cli";
+import { exists, save } from "../util/fs";
 
 type Properties = PageObjectResponse["properties"][string];
 type Title = Extract<Properties, { type: "title" }>;
@@ -19,6 +22,7 @@ interface GenerateOptions {
     category?: boolean;
     ci?: boolean;
     ignore?: boolean;
+    dir?: string;
 }
 export async function generate(
     config: Config,
@@ -79,7 +83,44 @@ export async function generate(
         }
     }
 
-    notImplementedYet("TODO: Generate the files");
+    console.log("Generating language files");
+    for (const [lng_name, lng] of languages) {
+        let path: string;
+        let str: string;
+        switch (options.format) {
+            case "android": {
+                str = gen_android(lng);
+                const dir = await get_dir(
+                    options.dir,
+                    (dir) => `${dir}-${lng_name}`,
+                );
+                path = `${dir}strings.xml`;
+                break;
+            }
+
+            case "i18next": {
+                str = gen_i18next(lng);
+                path = `${await get_dir(options.dir)}${lng_name}.json`;
+                break;
+            }
+        }
+
+        await save(path, str);
+    }
+}
+
+async function get_dir(
+    dir?: string,
+    transform?: (v: string) => string,
+): Promise<string> {
+    if (dir) {
+        const path = transform ? transform(dir) : dir;
+        if (!(await exists(transform ? transform(dir) : dir))) {
+            await mkdir(path, { recursive: true });
+        }
+        return `${path}/`;
+    }
+    return "";
 }
 
 function parse_pages(pages: PageObjectResponse[]): {
@@ -137,4 +178,28 @@ function parse_pages(pages: PageObjectResponse[]): {
         missing,
         languages,
     };
+}
+
+function gen_i18next(lng: Language): string {
+    const out: { [key: Key]: string } = {};
+    for (const [key, { value }] of lng) {
+        out[key] = value.rich_text.map((v) => v.plain_text).join(" ");
+    }
+    return JSON.stringify(out, undefined, 4);
+}
+
+function gen_android(lng: Language): string {
+    const out: string[] = [
+        `<?xml version="1.0" encoding="utf-8"?>`,
+        `<resources xmlns:tools="http://schemas.android.com/tools"`,
+    ];
+    for (const [key, { value }] of lng) {
+        out.push(
+            `    <string name="${key}">${value.rich_text
+                .map((v) => v.plain_text)
+                .join(" ")}</string>`,
+        );
+    }
+    out.push("</resources>");
+    return out.join("\n");
 }
