@@ -1,6 +1,7 @@
 {
   "name": "notion-translations",
   "main": "build/index.js",
+  "version": "1.0.0",
   "bin": {
     "translations": "index.js"
   },
