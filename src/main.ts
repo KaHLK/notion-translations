@@ -126,17 +126,12 @@ export default async function main(): Promise<number> {
             "i18next",
         )
         .option(
-            "-c, --category",
-            "Add each table as a 'category' in the generated files (A nesting level).",
-        )
-        .option(
             "--ci",
             "Answers no to all duplicates and lists the missing translations",
         )
         .option("-i, --ignore", "Ignore all prompts")
         .action(async (options) => {
             await Gen.generate(config, notion, options);
-            /* TODO */
         });
 
     await app.parseAsync(process.argv);

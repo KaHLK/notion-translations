@@ -19,7 +19,6 @@ type Language = Map<Key, { value: RichText; context: RichText }>;
 
 interface GenerateOptions {
     format: "i18next" | "android";
-    category?: boolean;
     ci?: boolean;
     ignore?: boolean;
 }
