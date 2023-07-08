@@ -4,9 +4,9 @@ import { CONFIG_FILE } from "./constants";
 import { Database } from "./model";
 import { exists } from "./util/fs";
 import { Result, err, ok } from "./util/result";
-import { NonFunctionMembers, Writable } from "./util/types";
+import { NonFunctionMembers } from "./util/types";
 
-type ConfigJson = Partial<Writable<NonFunctionMembers<Config>>>;
+type ConfigJson = Partial<NonFunctionMembers<Config>>;
 
 export class Config {
     out: string;
