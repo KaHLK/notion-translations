@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node index.js",
-    "prestart": "yarn build"
+    "prestart": "yarn build",
+    "postinstall": "tsc"
   },
   "devDependencies": {
     "@types/prompts": "2.4.4",
