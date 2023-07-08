@@ -17,7 +17,7 @@
     "rome": "12.1.2",
     "typescript": "5.0.4"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@notionhq/client": "2.2.5",
     "commander": "10.0.1",
     "dotenv": "16.0.3",
