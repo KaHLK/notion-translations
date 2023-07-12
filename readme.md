@@ -32,7 +32,7 @@ action | Read | Write | Insert
 | remote import | [x] | [ ] | [x] |
 | gen | [x] | [ ] | [ ] |
 
-Copy the integration API key and pass it into the tool as a environment variable (supports dotenv, so you can save the api key in a .env file).
+Copy the integration API key and pass it into the tool as the environment variable `NOTION_TOKEN` (supports dotenv, so you can save the api key in a .env file).
 
 ## Setup
 
