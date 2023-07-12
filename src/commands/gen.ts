@@ -60,7 +60,7 @@ export async function generate(
         0,
     );
     if (!options.ignore && num_missing > 0) {
-        let answer = !options.ci;
+        let answer = options.ci;
         if (options.ci === undefined) {
             answer = (
                 await confirm(
