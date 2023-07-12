@@ -11,13 +11,14 @@ import {
     create_database,
     create_page,
     get_database,
+    get_page_from_database,
     get_pages,
     update_database,
+    update_page,
 } from "../api";
 import { Config } from "../config";
 import { Database, database_object_to_database } from "../model";
 import { autocomplete, confirm, get_text } from "../util/cli";
-import { notImplementedYet } from "../util/fn";
 import { Result, err, ok } from "../util/result";
 import { Option, none, some } from "../util/option";
 import { ImportFormat, parse_file } from "./remote/parse";
@@ -336,18 +337,30 @@ export async function new_from_import(
     let i = 0;
     for (const unit of units.value) {
         i++;
+        const existing = await get_page_from_database(
+            client,
+            parent_id,
+            unit.key,
+        );
+
+        if (existing.isErr()) {
+            return;
+        }
+
         const props: Extract<
             CreatePageParameters,
             { parent: { database_id: string } }
         >["properties"] = {};
-        props["key"] = {
-            type: "title",
-            title: [{ text: { content: unit.key } }],
-        };
-        props["context"] = {
-            type: "rich_text",
-            rich_text: [{ text: { content: unit.context } }],
-        };
+        if (!existing.value) {
+            props["key"] = {
+                type: "title",
+                title: [{ text: { content: unit.key } }],
+            };
+            props["context"] = {
+                type: "rich_text",
+                rich_text: [{ text: { content: unit.context } }],
+            };
+        }
         for (const [lng, value] of Object.entries(unit.languages)) {
             props[lng] = {
                 type: "rich_text",
@@ -355,13 +368,24 @@ export async function new_from_import(
             };
         }
 
-        console.log(
-            `Creating page '${unit.key}' (${i} of ${units.value.length})`,
-        );
-        const res = await create_page(client, {
-            parent: { database_id: parent_id, type: "database_id" },
-            properties: props,
-        });
+        const res = await (async () => {
+            if (existing.value) {
+                console.log(
+                    `Updating page '${unit.key}' (${i} of ${units.value.length})`,
+                );
+                return await update_page(client, {
+                    page_id: existing.value.id,
+                    properties: props,
+                });
+            }
+            console.log(
+                `Creating page '${unit.key}' (${i} of ${units.value.length})`,
+            );
+            return await create_page(client, {
+                parent: { database_id: parent_id, type: "database_id" },
+                properties: props,
+            });
+        })();
         if (res.isErr()) {
             console.error(
                 `Error occurred trying to create page '${unit.key}'`,

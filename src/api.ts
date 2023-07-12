@@ -5,6 +5,7 @@ import {
     DatabaseObjectResponse,
     PageObjectResponse,
     UpdateDatabaseParameters,
+    UpdatePageParameters,
 } from "@notionhq/client/build/src/api-endpoints";
 
 import { map_error } from "./util/notion";
@@ -126,6 +127,33 @@ export async function get_from_database(
     }
 }
 
+export async function get_page_from_database(
+    client: Client,
+    id: string,
+    title_query: string,
+): Promise<Result<PageObjectResponse | undefined, Error>> {
+    try {
+        const res = await collectPaginatedAPI(client.databases.query, {
+            database_id: id,
+            filter: {
+                property: "key",
+                title: {
+                    equals: title_query,
+                },
+            },
+        });
+
+        return ok((res as PageObjectResponse[]).at(0));
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to get pages from database '${id}'`,
+            ),
+        );
+    }
+}
+
 export async function create_page(
     client: Client,
     page: CreatePageParameters,
@@ -142,6 +170,24 @@ export async function create_page(
                         (p) => p.type === "title",
                     )?.title[0].text.content
                 }'`,
+            ),
+        );
+    }
+}
+
+export async function update_page(client: Client, page: UpdatePageParameters) {
+    try {
+        const res = await client.pages.update(page);
+        return ok(res as PageObjectResponse);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to update page '${
+                    Object.values(page.properties ?? {}).find(
+                        (p) => p.type === "title",
+                    )?.title[0].text.content
+                }`,
             ),
         );
     }
