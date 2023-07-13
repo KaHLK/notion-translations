@@ -150,8 +150,9 @@ export async function get_page_from_database(
                     .join(" "),
             )
             .findIndex((t) => t === title_query);
+
         if (idx >= 0) {
-            return ok(res[0]);
+            return ok(res[idx]);
         }
         return ok(undefined);
     } catch (e) {

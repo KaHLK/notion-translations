@@ -107,7 +107,6 @@ export default async function main(): Promise<number> {
             "--append [id]",
             "Append the imported values to an existing database",
         )
-        .option("-d, --debug", "Debug printing")
         .addArgument(
             new Argument(
                 "format",
