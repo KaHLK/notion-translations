@@ -7,15 +7,7 @@ import { get_from_database } from "../api";
 import { notImplementedYet } from "../util/fn";
 import { confirm } from "../util/cli";
 import { exists, save } from "../util/fs";
-
-type Properties = PageObjectResponse["properties"][string];
-type Title = Extract<Properties, { type: "title" }>;
-type RichText = Extract<Properties, { type: "rich_text" }>;
-
-type Lng = string & { readonly lng: unique symbol };
-type Key = string & { readonly title: unique symbol };
-
-type Language = Map<Key, { value: RichText; context: RichText }>;
+import { Notion } from "../util/notion";
 
 interface GenerateOptions {
     format: "i18next" | "android";
@@ -122,14 +114,14 @@ async function get_dir(
 }
 
 function parse_pages(pages: PageObjectResponse[]): {
-    duplicates: Map<string, RichText[]>;
+    duplicates: Map<string, Notion.RichText[]>;
     missing: Map<string, string[]>;
-    languages: Map<Lng, Language>;
+    languages: Map<Notion.Lng, Notion.Language>;
 } {
-    const missing: Map<Lng, Key[]> = new Map();
-    const duplicates: Map<Key, RichText[]> = new Map();
+    const missing: Map<Notion.Lng, Notion.Key[]> = new Map();
+    const duplicates: Map<Notion.Key, Notion.RichText[]> = new Map();
 
-    const languages: Map<Lng, Language> = new Map();
+    const languages: Map<Notion.Lng, Notion.Language> = new Map();
     for (const page of pages) {
         const properties = Object.entries(page.properties);
         const _title = properties.find(([_, p]) => p.type === "title");
@@ -142,13 +134,13 @@ function parse_pages(pages: PageObjectResponse[]): {
             continue;
         }
 
-        const title = (_title[1] as Title).title
+        const title = (_title[1] as Notion.Title).title
             .map((t) => t.plain_text)
-            .join("_") as Key;
-        const context = _context[1] as RichText;
+            .join("_") as Notion.Key;
+        const context = _context[1] as Notion.RichText;
         const rest = properties.filter(
             ([n, p]) => n !== "context" && p.type === "rich_text",
-        ) as [Lng, RichText][];
+        ) as [Notion.Lng, Notion.RichText][];
 
         for (const [name, prop] of rest) {
             if (prop.rich_text.length === 0) {
@@ -157,7 +149,7 @@ function parse_pages(pages: PageObjectResponse[]): {
                 continue;
             }
 
-            const dict: Language = languages.get(name) ?? new Map();
+            const dict: Notion.Language = languages.get(name) ?? new Map();
             if (dict.has(title)) {
                 const arr = duplicates.get(title) ?? [];
                 duplicates.set(title, arr.concat(prop));
@@ -178,15 +170,15 @@ function parse_pages(pages: PageObjectResponse[]): {
     };
 }
 
-function gen_i18next(lng: Language): string {
-    const out: { [key: Key]: string } = {};
+function gen_i18next(lng: Notion.Language): string {
+    const out: { [key: Notion.Key]: string } = {};
     for (const [key, { value }] of lng) {
         out[key] = value.rich_text.map((v) => v.plain_text).join(" ");
     }
     return JSON.stringify(out, undefined, 4);
 }
 
-function gen_android(lng: Language): string {
+function gen_android(lng: Notion.Language): string {
     const out: string[] = [
         `<?xml version="1.0" encoding="utf-8"?>`,
         `<resources xmlns:tools="http://schemas.android.com/tools"`,
