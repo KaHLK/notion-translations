@@ -297,6 +297,7 @@ export async function new_from_import(
     const units = _units.value;
 
     let parent_id: string;
+    let parent_name: string;
     if (!options.append) {
         const dbs = await get_local_databases(config, client);
         if (dbs.isErr()) {
@@ -317,6 +318,7 @@ export async function new_from_import(
             ).expect("Expected name to be entered. Exiting");
         }
 
+        console.log("Fetching pages");
         const parent = (await get_parent_page(client)).unwrap();
         console.log(`Creating new database '${db_name}'`);
         const database = construct_database_request(
@@ -331,10 +333,20 @@ export async function new_from_import(
             return;
         }
         parent_id = res.value.id;
+        parent_name = res.value.title.at(0)?.plain_text ?? "";
     } else {
         parent_id = options.append;
+        parent_name =
+            (await get_database(client, parent_id)).unwrap().title.at(0)
+                ?.plain_text ?? "";
     }
 
+    if (!config.databases.some((db) => db.id === parent_id)) {
+        const answer = await confirm("Should the database be saved?", true);
+        if (answer.isSomeAnd((v) => v)) {
+            config.databases.push({ id: parent_id, name: parent_name });
+        }
+    }
     let i = 0;
     for (const unit of units) {
         i++;
