@@ -282,6 +282,7 @@ type DatabasePageProperties = Extract<
 type PageProperty = Extract<DatabasePageProperties[string], object>;
 type ImportOptions = {
     append?: string;
+    debug?: boolean;
 };
 export async function new_from_import(
     config: Config,
@@ -381,6 +382,16 @@ export async function new_from_import(
             };
         }
 
+        if (options.debug) {
+            console.debug(
+                "Handling",
+                JSON.stringify(props, undefined, 4),
+                "for unit",
+                unit,
+                "with existing",
+                existing.ok.some,
+            );
+        }
         const res = await (async () => {
             if (existing.value) {
                 console.log(
@@ -405,6 +416,8 @@ export async function new_from_import(
                 res.error,
             );
             return;
+        } else if (options.debug) {
+            console.log(res.ok.some);
         }
     }
 }
