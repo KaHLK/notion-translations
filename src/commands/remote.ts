@@ -387,9 +387,9 @@ export async function new_from_import(
                 "Handling",
                 JSON.stringify(props, undefined, 4),
                 "for unit",
-                unit,
+                JSON.stringify(unit, undefined, 4),
                 "with existing",
-                existing.ok.some,
+                JSON.stringify(existing.ok.some, undefined, 4),
             );
         }
         const res = await (async () => {
@@ -417,7 +417,7 @@ export async function new_from_import(
             );
             return;
         } else if (options.debug) {
-            console.log(res.ok.some);
+            console.log(JSON.stringify(res.ok.some, undefined, 4));
         }
     }
 }
