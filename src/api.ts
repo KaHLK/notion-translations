@@ -8,7 +8,7 @@ import {
     UpdatePageParameters,
 } from "@notionhq/client/build/src/api-endpoints";
 
-import { map_error } from "./util/notion";
+import { Notion, map_error } from "./util/notion";
 import { Result, err, ok } from "./util/result";
 
 export async function get_databases(
@@ -133,7 +133,7 @@ export async function get_page_from_database(
     title_query: string,
 ): Promise<Result<PageObjectResponse | undefined, Error>> {
     try {
-        const res = await collectPaginatedAPI(client.databases.query, {
+        const res = (await collectPaginatedAPI(client.databases.query, {
             database_id: id,
             filter: {
                 property: "key",
@@ -141,9 +141,19 @@ export async function get_page_from_database(
                     equals: title_query,
                 },
             },
-        });
+        })) as PageObjectResponse[];
 
-        return ok((res as PageObjectResponse[]).at(0));
+        const idx = res
+            .map((r) =>
+                (r.properties.key as Notion.Title).title
+                    .map((t) => t.plain_text)
+                    .join(" "),
+            )
+            .findIndex((t) => t === title_query);
+        if (idx >= 0) {
+            return ok(res[0]);
+        }
+        return ok(undefined);
     } catch (e) {
         return err(
             map_error(
