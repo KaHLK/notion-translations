@@ -290,10 +290,11 @@ export async function new_from_import(
     format: ImportFormat,
     options: ImportOptions,
 ) {
-    const units = await parse_file(file_path, format);
-    if (units.isNone()) {
+    const _units = await parse_file(file_path, format);
+    if (_units.isNone()) {
         return;
     }
+    const units = _units.value;
 
     let parent_id: string;
     if (!options.append) {
@@ -335,7 +336,7 @@ export async function new_from_import(
     }
 
     let i = 0;
-    for (const unit of units.value) {
+    for (const unit of units) {
         i++;
         const existing = await get_page_from_database(
             client,
@@ -371,7 +372,7 @@ export async function new_from_import(
         const res = await (async () => {
             if (existing.value) {
                 console.log(
-                    `Updating page '${unit.key}' (${i} of ${units.value.length})`,
+                    `Updating page '${unit.key}' (${i} of ${units.length})`,
                 );
                 return await update_page(client, {
                     page_id: existing.value.id,
@@ -379,7 +380,7 @@ export async function new_from_import(
                 });
             }
             console.log(
-                `Creating page '${unit.key}' (${i} of ${units.value.length})`,
+                `Creating page '${unit.key}' (${i} of ${units.length})`,
             );
             return await create_page(client, {
                 parent: { database_id: parent_id, type: "database_id" },
