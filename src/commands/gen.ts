@@ -61,6 +61,7 @@ export async function generate(
             ).expect("Please answer with a 'y' or 'n'.");
         }
         if (answer) {
+            console.log("Missing translations:");
             for (const [lang, keys] of missing.entries()) {
                 console.group(`${lang}:`);
                 for (const key of keys) {
@@ -113,12 +114,12 @@ async function get_dir(
 }
 
 function parse_pages(pages: PageObjectResponse[]): {
-    duplicates: Map<string, Notion.RichText[]>;
+    duplicates: Map<string, string[]>;
     missing: Map<string, string[]>;
     languages: Map<Notion.Lng, Notion.Language>;
 } {
     const missing: Map<Notion.Lng, Notion.Key[]> = new Map();
-    const duplicates: Map<Notion.Key, Notion.RichText[]> = new Map();
+    const duplicates: Map<Notion.Key, string[]> = new Map();
 
     const languages: Map<Notion.Lng, Notion.Language> = new Map();
     for (const page of pages) {
@@ -136,13 +137,14 @@ function parse_pages(pages: PageObjectResponse[]): {
         const title = (_title[1] as Notion.Title).title
             .map((t) => t.plain_text)
             .join("_") as Notion.Key;
-        const context = _context[1] as Notion.RichText;
+        const context = get_richtext(_context[1] as Notion.RichText);
         const rest = properties.filter(
             ([n, p]) => n !== "context" && p.type === "rich_text",
         ) as [Notion.Lng, Notion.RichText][];
 
         for (const [name, prop] of rest) {
-            if (prop.rich_text.length === 0) {
+            const text = get_richtext(prop);
+            if (text.length === 0) {
                 const arr = missing.get(name) ?? [];
                 missing.set(name, arr.concat(title));
                 continue;
@@ -151,11 +153,11 @@ function parse_pages(pages: PageObjectResponse[]): {
             const dict: Notion.Language = languages.get(name) ?? new Map();
             if (dict.has(title)) {
                 const arr = duplicates.get(title) ?? [];
-                duplicates.set(title, arr.concat(prop));
+                duplicates.set(title, arr.concat(text));
                 continue;
             }
             dict.set(title, {
-                value: prop,
+                value: text,
                 context,
             });
             languages.set(name, dict);
@@ -172,7 +174,7 @@ function parse_pages(pages: PageObjectResponse[]): {
 function gen_i18next(lng: Notion.Language): string {
     const out: { [key: Notion.Key]: string } = {};
     for (const [key, { value }] of lng) {
-        out[key] = value.rich_text.map((v) => v.plain_text).join(" ");
+        out[key] = value;
     }
     return JSON.stringify(out, undefined, 4);
 }
@@ -183,12 +185,15 @@ function gen_android(lng: Notion.Language): string {
         `<resources xmlns:tools="http://schemas.android.com/tools"`,
     ];
     for (const [key, { value }] of lng) {
-        out.push(
-            `    <string name="${key}">${value.rich_text
-                .map((v) => v.plain_text)
-                .join(" ")}</string>`,
-        );
+        out.push(`    <string name="${key}">${value}</string>`);
     }
     out.push("</resources>");
     return out.join("\n");
+}
+
+function get_richtext(rich_text: Notion.RichText): string {
+    return rich_text.rich_text
+        .map((rt) => rt.plain_text)
+        .join(" ")
+        .trim();
 }

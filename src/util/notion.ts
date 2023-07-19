@@ -17,5 +17,5 @@ export namespace Notion {
     export type Lng = string & { readonly lng: unique symbol };
     export type Key = string & { readonly title: unique symbol };
 
-    export type Language = Map<Key, { value: RichText; context: RichText }>;
+    export type Language = Map<Key, { value: string; context: string }>;
 }
