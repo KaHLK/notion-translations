@@ -24,8 +24,7 @@ export async function generate(
         console.log(`Fetching pages from database '${db.name}'`);
         const res = await get_from_database(client, db.id);
         if (res.isErr()) {
-            console.error(res.error);
-            continue;
+            throw res.error;
         }
 
         pages.push(...res.value);
