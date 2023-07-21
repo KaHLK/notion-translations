@@ -1,3 +1,6 @@
 src
 notion-translate.json
 out
+.env
+rome.json
+tsconfig.json
