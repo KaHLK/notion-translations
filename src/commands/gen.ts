@@ -1,13 +1,17 @@
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { mkdir } from "fs/promises";
+import os from "os";
 
 import { Config } from "../config";
-import { get_from_database } from "../api";
+import { get_database, get_from_database } from "../api";
 import { notImplementedYet } from "../util/fn";
 import { confirm } from "../util/cli";
 import { exists, save } from "../util/fs";
 import { Notion } from "../util/notion";
+import { GenCache } from "../cache";
+import { Database } from "../model";
+import { Result, err, ok } from "../util/result";
 
 interface GenerateOptions {
     format: "i18next" | "android";
@@ -19,16 +23,18 @@ export async function generate(
     client: Client,
     options: GenerateOptions,
 ) {
+    const cache = await GenCache.open();
     const pages: PageObjectResponse[] = [];
     for (const db of config.databases) {
-        console.log(`Fetching pages from database '${db.name}'`);
-        const res = await get_from_database(client, db.id);
+        const res = await get_db_pages(db, cache, client);
         if (res.isErr()) {
             throw res.error;
         }
 
         pages.push(...res.value);
     }
+
+    await cache.save();
 
     console.log("Parsing pages");
     const { duplicates, missing, languages } = parse_pages(pages);
@@ -97,6 +103,34 @@ export async function generate(
 
         await save(path, str);
     }
+}
+
+async function get_db_pages(
+    db: Database,
+    cache: GenCache,
+    client: Client,
+): Promise<Result<PageObjectResponse[], Error>> {
+    const cached = cache.get(db.id);
+    const db_info = await get_database(client, db.id);
+    if (db_info.isErr()) {
+        return err(db_info.error);
+    }
+    const last_updated = Date.parse(db_info.value.last_edited_time);
+    if (cached !== undefined) {
+        if (last_updated === cached.last_updated) {
+            console.log(`Found cached values for '${db.name}'`);
+            return ok(cached.pages);
+        }
+    }
+
+    console.log(`Fetching pages from database '${db.name}'`);
+    const pages = await get_from_database(client, db.id);
+    if (pages.isErr()) {
+        return pages;
+    }
+    cache.store(db.id, last_updated, pages.value);
+
+    return pages;
 }
 
 async function get_dir(
