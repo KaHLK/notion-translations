@@ -8,14 +8,12 @@ A tool that allows you to use notion databases as the backend for i18n dictionar
 
 ## Installation
 
-The tool is not currently published so to use it you must use a direct url to this repository:
-```
-git+https://github.com/kahlk/notion-translations
-git+ssh://git@github.com:kahlk/notion-translations
-```
-
 It can either be installed globally with `npm i -g`, run with `npx`, or installed in a npm project using the package manager of your choice.
 
+Using `npm` (recommended as a dev dependency):
+```shell
+npm i -d notion-translations
+```
 
 # How to use
 
