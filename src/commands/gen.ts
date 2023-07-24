@@ -1,7 +1,6 @@
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { mkdir } from "fs/promises";
-import os from "os";
 
 import { Config } from "../config";
 import { get_database, get_from_database } from "../api";

@@ -1,5 +1,5 @@
 import { Client } from "@notionhq/client";
-import { Argument, Command, Option } from "commander";
+import { Argument, Command } from "commander";
 import dotenv from "dotenv";
 
 import { Gen, Local, Remote, Util } from "./commands";
