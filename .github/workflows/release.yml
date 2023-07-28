@@ -35,7 +35,7 @@ jobs:
   #       with:
   #         upload_url: ${{ github.event.release.upload_url }}
   #         asset_path: ./translation.exe
-  #         asset_name: translation-${{ github.event.release.tag_name }}-windows.exe
+  #         asset_name: translation-${{ github.event.release.tag_name }}-windows-${{ runner.arch }}.exe
   #         asset_content_type: binary/octet-stream
 
   bundle_mac:
@@ -67,7 +67,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./translations
-          asset_name: translation-${{ github.event.release.tag_name }}-macos
+          asset_name: translation-${{ github.event.release.tag_name }}-macos-${{ runner.arch }}
           asset_content_type: binary/octet-stream
 
   bundle_linux:
@@ -99,5 +99,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./translations
-          asset_name: translation-${{ github.event.release.tag_name }}-linux
+          asset_name: translation-${{ github.event.release.tag_name }}-linux-${{ runner.arch }}
           asset_content_type: binary/octet-stream
