@@ -1,0 +1,103 @@
+name: Deployment
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  # bundle_win:
+  #   name: Bundle windows
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #     - name: Setup node/yarn
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18.16
+  #         cache: yarn
+  #         cache-dependency-path: yarn.lock
+  #     - name: Install & build
+  #       run: |
+  #         yarn install --frozen-lockfile
+  #         yarn build
+
+  #     - name: Setup bun
+  #       uses: antongolub/action-setup-bun@v1
+  #     - name: Bundle
+  #       run: bun build index.js --compile --outfile translations.exe
+
+  #     - name: Upload win
+  #       uses: actions/upload-release-asset@v1.0.1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ github.event.release.upload_url }}
+  #         asset_path: ./translation.exe
+  #         asset_name: translation-${{ github.event.release.tag_name }}-windows.exe
+  #         asset_content_type: binary/octet-stream
+
+  bundle_mac:
+    name: Bundle macos
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup node/yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.16
+          cache: yarn
+          cache-dependency-path: yarn.lock
+      - name: Install & build
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Setup bun
+        uses: antongolub/action-setup-bun@v1
+      - name: Bundle
+        run: bun build index.js --compile --outfile translations
+
+      - name: Upload mac
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./translations
+          asset_name: translation-${{ github.event.release.tag_name }}-macos
+          asset_content_type: binary/octet-stream
+
+  bundle_linux:
+    name: Bundle ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup node/yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.16
+          cache: yarn
+          cache-dependency-path: yarn.lock
+      - name: Install & build
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Setup bun
+        uses: antongolub/action-setup-bun@v1
+      - name: Bundle
+        run: bun build index.js --compile --outfile translations
+
+      - name: Upload linux
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./translations
+          asset_name: translation-${{ github.event.release.tag_name }}-linux
+          asset_content_type: binary/octet-stream
