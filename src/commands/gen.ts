@@ -13,7 +13,7 @@ import { Database } from "../model";
 import { Result, err, ok } from "../util/result";
 import { gen_resx } from "./gen/resx";
 
-export const generate_formats = ["i18next", "android"] as const;
+export const generate_formats = ["i18next", "android", "resx"] as const;
 export type GenerateFormat = typeof generate_formats[number];
 
 interface GenerateOptions {
@@ -100,6 +100,12 @@ export async function generate(
             case "i18next": {
                 str = gen_i18next(lng);
                 path = `${await get_dir(config.out)}${lng_name}.json`;
+                break;
+            }
+
+            case "resx": {
+                str = gen_resx(lng);
+                path = `${await get_dir(config.out)}Resources-${lng_name}.resx`;
                 break;
             }
         }
