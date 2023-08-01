@@ -27,7 +27,7 @@ type POEditorExportJSON = {
     comment: string;
 }[];
 
-async function read_json(path: string): Promise<Option<unknown>> {
+async function read_json<T>(path: string): Promise<Option<T>> {
     try {
         const str = (await readFile(path)).toString();
         return some(JSON.parse(str));
