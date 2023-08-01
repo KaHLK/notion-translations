@@ -11,9 +11,13 @@ import { Notion } from "../util/notion";
 import { GenCache } from "../cache";
 import { Database } from "../model";
 import { Result, err, ok } from "../util/result";
+import { gen_resx } from "./gen/resx";
+
+export const generate_formats = ["i18next", "android"] as const;
+export type GenerateFormat = typeof generate_formats[number];
 
 interface GenerateOptions {
-    format: "i18next" | "android";
+    format: GenerateFormat;
     ci?: boolean;
     ignore?: boolean;
 }

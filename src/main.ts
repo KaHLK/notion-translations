@@ -1,5 +1,5 @@
 import { Client } from "@notionhq/client";
-import { Argument, Command } from "commander";
+import { Argument, Command, Option } from "commander";
 import dotenv from "dotenv";
 
 import { Gen, Local, Remote, Util } from "./commands";
@@ -120,10 +120,10 @@ export default async function main(): Promise<number> {
 
     app.command("gen")
         .description("Generate language files from the tables in notion")
-        .option(
-            "-f, --format <format>",
-            "The format to output. Possible options: i18next",
-            "i18next",
+        .addOption(
+            new Option("-f, --format <format>", "The format to output")
+                .choices(Gen.generate_formats)
+                .default(Gen.generate_formats[0]),
         )
         .option(
             "--ci",
