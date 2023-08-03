@@ -13,6 +13,8 @@ import { Database } from "../model";
 import { Result, err, ok } from "../util/result";
 import { gen_resx } from "./gen/resx";
 
+// TODO: Allow for setting the name of the output files (in some form of format, where a part is replaced with the language or it is appended if no replaceable part is found).
+
 export const generate_formats = ["i18next", "android", "resx"] as const;
 export type GenerateFormat = typeof generate_formats[number];
 
@@ -105,7 +107,9 @@ export async function generate(
 
             case "resx": {
                 str = gen_resx(lng);
-                path = `${await get_dir(config.out)}Resources-${lng_name}.resx`;
+                path = `${await get_dir(
+                    config.out,
+                )}Repositories.LocalizationRepository.${lng_name}.resx`;
                 break;
             }
         }
