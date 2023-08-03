@@ -27,7 +27,7 @@ action | Read | Write | Insert
 | local sync | [x] | [ ] | [ ] |
 | remote new | [x] | [ ] | [x] |
 | remote normalize | [x] | [x] | [x] |
-| remote import | [x] | [ ] | [x] |
+| remote import | [x] | [x] | [x] |
 | gen | [x] | [ ] | [ ] |
 
 Copy the integration API key and pass it into the tool as the environment variable `NOTION_TOKEN` (supports dotenv, so you can save the api key in a .env file).
