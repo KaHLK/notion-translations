@@ -38,7 +38,7 @@ export async function add(config: Config, client: Client) {
         const answer = await confirm(
             `Found one database (${available[0].name}). Do you want to add it?`,
         );
-        if (answer) {
+        if (answer.isSomeAnd((v) => v)) {
             config.add_databases(available);
         }
         return;
