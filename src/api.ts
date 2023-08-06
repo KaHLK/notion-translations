@@ -4,6 +4,7 @@ import {
     CreatePageParameters,
     DatabaseObjectResponse,
     PageObjectResponse,
+    QueryDatabaseParameters,
     UpdateDatabaseParameters,
     UpdatePageParameters,
 } from "@notionhq/client/build/src/api-endpoints";
@@ -102,6 +103,27 @@ export async function get_pages(
             map_error(
                 e,
                 "Error occurred trying to get all pages shared with this integration.",
+            ),
+        );
+    }
+}
+
+export async function query_database(
+    client: Client,
+    database_id: string,
+    filter: Omit<QueryDatabaseParameters, "database_id"> = {},
+): Promise<Result<PageObjectResponse[], Error>> {
+    try {
+        const res = await client.databases.query({
+            database_id,
+            ...filter,
+        });
+        return ok(res.results as PageObjectResponse[]);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                "Error occurred trying to get all pages shared with this integration",
             ),
         );
     }
