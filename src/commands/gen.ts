@@ -2,15 +2,15 @@ import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import { mkdir } from "fs/promises";
 
+import { get_from_database } from "../api";
+import { GenCache } from "../cache";
 import { Config } from "../config";
-import { get_database, get_from_database } from "../api";
-import { notImplementedYet } from "../util/fn";
+import { Database } from "../model";
 import { confirm } from "../util/cli";
+import { notImplementedYet } from "../util/fn";
 import { exists, save } from "../util/fs";
 import { Notion } from "../util/notion";
-import { GenCache } from "../cache";
-import { Database } from "../model";
-import { Result, err, ok } from "../util/result";
+import { Result, err } from "../util/result";
 import { gen_resx } from "./gen/resx";
 
 // TODO: Allow for setting the name of the output files (in some form of format, where a part is replaced with the language or it is appended if no replaceable part is found).
@@ -28,18 +28,20 @@ export async function generate(
     client: Client,
     options: GenerateOptions,
 ) {
-    const cache = await GenCache.open();
+    const cache = await GenCache.open(client);
     const pages: PageObjectResponse[] = [];
-    for (const db of config.databases) {
-        const res = await get_db_pages(db, cache, client);
-        if (res.isErr()) {
-            throw res.error;
+    try {
+        for (const db of config.databases) {
+            const res = await get_db_pages(db, cache, client);
+            if (res.isErr()) {
+                throw res.error;
+            }
+
+            pages.push(...res.value);
         }
-
-        pages.push(...res.value);
+    } finally {
+        await cache.save();
     }
-
-    await cache.save();
 
     console.log("Parsing pages");
     const { duplicates, missing, languages } = parse_pages(pages);
@@ -123,17 +125,17 @@ async function get_db_pages(
     cache: GenCache,
     client: Client,
 ): Promise<Result<PageObjectResponse[], Error>> {
-    const cached = cache.get(db.id);
-    const db_info = await get_database(client, db.id);
-    if (db_info.isErr()) {
-        return err(db_info.error);
+    const cached = await cache.get_valid_entry(db.id);
+
+    if (cached.isOk()) {
+        return cached.map((v) => v.pages) as Result<
+            PageObjectResponse[],
+            never
+        >;
     }
-    const last_updated = Date.parse(db_info.value.last_edited_time);
-    if (cached !== undefined) {
-        if (last_updated === cached.last_updated) {
-            console.log(`Found cached values for '${db.name}'`);
-            return ok(cached.pages);
-        }
+
+    if (cached.error.isErr()) {
+        return err(cached.error.error);
     }
 
     console.log(`Fetching pages from database '${db.name}'`);
@@ -141,6 +143,12 @@ async function get_db_pages(
     if (pages.isErr()) {
         return pages;
     }
+
+    const last_updated = cached.error.value.unwrapOrElse(() => {
+        return Math.max(
+            ...pages.value.map((v) => Date.parse(v.last_edited_time)),
+        );
+    });
     cache.store(db.id, last_updated, pages.value);
 
     return pages;
