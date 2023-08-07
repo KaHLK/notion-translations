@@ -86,6 +86,11 @@ export async function generate(
         }
     }
 
+    if (languages.size === 0) {
+        console.warn("No values/languages found. Not generating any files");
+        return;
+    }
+
     console.log("Generating language files");
     for (const [lng_name, lng] of languages) {
         let path: string;
