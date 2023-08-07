@@ -5,6 +5,7 @@ A tool that allows you to use notion databases as the backend for i18n dictionar
 ## Supported formats
 * I18next
 * Android string xml resource
+* C# compatible .resx
 
 ## Installation
 
@@ -45,3 +46,22 @@ You can import existing translation files into your notion databases using `tran
 ## Generate translation files
 
 After you have added the desired databases to the local config, and created the desired translations in notion, you can fetch the databases and generate files of the desired format, run `translation gen [options]`
+
+# Database layout
+
+This script makes a few assumptions about the layout of the notion databases.
+
+* The title column is expected to be called `key`, but this is not required.
+* All non-`text` columns will be ignored by the script (though I would like to make it possible to add filters in the future).
+* There will be generated a language file for each `text` column in the databases (the databases will be merged into one file per unique column), where the name of the column will be used as the generated "language".
+  - Would like to be able to exclude specific columns in the future.
+
+# Roadmap
+
+A few things I would like to add
+* Handle duplicate keys when generating.
+  - Currently throws a `notImplementedYet` error if a duplicate key is found
+* Configure the output file name (it's currently only possible to set the output directory).
+* Set a filter based on columns of each database.
+  - This could fx. be used to ignore specific `text` columns or ignore rows with a checkbox set.
+* Add a new language to all databases associated with script.
