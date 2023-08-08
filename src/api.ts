@@ -133,7 +133,20 @@ export async function get_from_database(
     client: Client,
     id: string,
 ): Promise<Result<PageObjectResponse[], Error>> {
-    return query_database(client, id);
+    try {
+        const res = await collectPaginatedAPI(client.databases.query, {
+            database_id: id,
+        });
+
+        return ok(res as PageObjectResponse[]);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to get pages from database '${id}'`,
+            ),
+        );
+    }
 }
 
 export async function get_page_from_database(
@@ -141,16 +154,17 @@ export async function get_page_from_database(
     id: string,
     title_query: string,
 ): Promise<Result<PageObjectResponse | undefined, Error>> {
-    return (
-        await query_database(client, id, {
+    try {
+        const res = (await collectPaginatedAPI(client.databases.query, {
+            database_id: id,
             filter: {
                 property: "key",
                 title: {
                     equals: title_query,
                 },
             },
-        })
-    ).map((res) => {
+        })) as PageObjectResponse[];
+
         const idx = res
             .map((r) =>
                 (r.properties.key as Notion.Title).title
@@ -160,10 +174,17 @@ export async function get_page_from_database(
             .findIndex((t) => t === title_query);
 
         if (idx >= 0) {
-            return res[idx];
+            return ok(res[idx]);
         }
-        return undefined;
-    });
+        return ok(undefined);
+    } catch (e) {
+        return err(
+            map_error(
+                e,
+                `Error occurred trying to get pages from database '${id}'`,
+            ),
+        );
+    }
 }
 
 export async function create_page(
