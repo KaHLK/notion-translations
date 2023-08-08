@@ -133,6 +133,7 @@ async function get_db_pages(
     const cached = await cache.get_valid_entry(db.id);
 
     if (cached.isOk()) {
+        console.log(`Found cached values for '${db.name}'`);
         return cached.map((v) => v.pages) as Result<
             PageObjectResponse[],
             never
