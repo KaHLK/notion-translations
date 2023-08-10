@@ -35,17 +35,17 @@ Copy the integration API key and pass it into the tool as the environment variab
 
 ## Setup
 
-Run the `translation init` to create a new `notion-translate.json` (change the output directory with `--out <directory>`).
+Run the `translations init` to create a new `notion-translate.json` (change the output directory with `--out <directory>`).
 
-Add the desired databases with `translation local add`.
+Add the desired databases with `translations local add`.
 
 ### Import (optional)
 
-You can import existing translation files into your notion databases using `translation remote import [options]`
+You can import existing translation files into your notion databases using `translations remote import [options]`
 
 ## Generate translation files
 
-After you have added the desired databases to the local config, and created the desired translations in notion, you can fetch the databases and generate files of the desired format, run `translation gen [options]`
+After you have added the desired databases to the local config, and created the desired translations in notion, you can fetch the databases and generate files of the desired format, run `translations gen [options]`
 
 # Database layout
 
