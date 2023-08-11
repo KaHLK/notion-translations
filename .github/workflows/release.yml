@@ -71,7 +71,7 @@ jobs:
           asset_content_type: binary/octet-stream
 
   bundle_mac_arm:
-    name: Bundle macos
+    name: Bundle macos arm
     runs-on: [self-hosted, macOS, ARM64]
     steps:
       - name: Checkout
