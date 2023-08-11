@@ -21,7 +21,7 @@
     "typescript": "5.0.4"
   },
   "dependencies": {
-    "@notionhq/client": "2.2.5",
+    "@notionhq/client": "2.2.10",
     "chalk": "4",
     "commander": "10.0.1",
     "dotenv": "16.0.3",

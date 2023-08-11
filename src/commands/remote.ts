@@ -362,7 +362,7 @@ export async function new_from_import(
 
         const props: Extract<
             CreatePageParameters,
-            { parent: { database_id: string } }
+            { parent: { database_id: string } | { page_id: string } }
         >["properties"] = {};
         if (!existing.value) {
             props["key"] = {
