@@ -22,13 +22,16 @@ interface GenerateOptions {
     format: GenerateFormat;
     ci?: boolean;
     ignore?: boolean;
+    skipCache?: boolean;
 }
 export async function generate(
     config: Config,
     client: Client,
     options: GenerateOptions,
 ) {
-    const cache = await GenCache.open(client);
+    const cache = options.skipCache
+        ? GenCache.empty(client)
+        : await GenCache.open(client);
     const pages: PageObjectResponse[] = [];
     try {
         for (const db of config.databases) {
@@ -40,7 +43,9 @@ export async function generate(
             pages.push(...res.value);
         }
     } finally {
-        await cache.save();
+        if (!options.skipCache) {
+            await cache.save();
+        }
     }
 
     console.log("Parsing pages");

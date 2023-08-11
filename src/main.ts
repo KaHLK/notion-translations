@@ -131,6 +131,7 @@ export default async function main(): Promise<number> {
             "Answers no to all duplicates and lists the missing translations",
         )
         .option("-i, --ignore", "Ignore all prompts")
+        .option("-S, --skip-cache", "Skip the cache entirely")
         .action(async (options) => {
             await Gen.generate(config, notion, options);
         });
