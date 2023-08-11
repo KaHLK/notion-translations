@@ -19,6 +19,7 @@ export default async function main(): Promise<number> {
     const config = await get_config();
     const notion = new Client({
         auth: process.env.NOTION_TOKEN,
+        fetch: fetch,
     });
 
     const app = new Command();
