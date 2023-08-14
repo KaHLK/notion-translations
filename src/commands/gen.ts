@@ -132,6 +132,7 @@ export async function generate(
             }
         }
 
+        console.log("Saving", lng_name, "to file:", path);
         await save(path, str);
     }
 }
