@@ -40,13 +40,20 @@ export class Config {
     static async from_file(
         path: string = CONFIG_FILE,
     ): Promise<Result<Config, Error>> {
+        let config_str = "";
         try {
-            const config_str = (await readFile(path)).toString();
+            config_str = (await readFile(path)).toString();
+        } catch (e) {
+            return err(new Error(`Failed to read config file (${e})`));
+        }
+        try {
             const obj = JSON.parse(config_str) as ConfigJson;
             const config = new Config(obj.out ?? "", obj.databases ?? [], path);
             return ok(config);
         } catch (e) {
-            return err(new Error(`Failed to read or parse config file (${e})`));
+            // TODO: Return different errors instead of throwing completely, and then handle the errors better
+            console.error("Failed to parse config file at:", path);
+            throw e;
         }
     }
 
