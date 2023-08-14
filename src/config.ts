@@ -9,10 +9,16 @@ import { NonFunctionMembers } from "./util/types";
 type ConfigJson = Partial<NonFunctionMembers<Config>>;
 
 export class Config {
+    #path: string;
     out: string;
     databases: Database[];
 
-    private constructor(out: string, databases: Database[]) {
+    private constructor(
+        out: string,
+        databases: Database[],
+        path: string = CONFIG_FILE,
+    ) {
+        this.#path = path;
         this.out = out;
         this.databases = databases;
     }
@@ -22,8 +28,8 @@ export class Config {
      *
      * @returns A new empty config
      */
-    static empty(): Config {
-        return new Config("", []);
+    static empty(path?: string): Config {
+        return new Config("", [], path);
     }
 
     /**
@@ -31,11 +37,14 @@ export class Config {
      *
      * @returns A result that contains either a Config object or an Error
      */
-    static async from_file(): Promise<Result<Config, Error>> {
+    static async from_file(
+        path: string = CONFIG_FILE,
+    ): Promise<Result<Config, Error>> {
         try {
-            const config_str = (await readFile(CONFIG_FILE)).toString();
+            const config_str = (await readFile(path)).toString();
             const obj = JSON.parse(config_str) as ConfigJson;
-            return ok(new Config(obj.out ?? "", obj.databases ?? []));
+            const config = new Config(obj.out ?? "", obj.databases ?? [], path);
+            return ok(config);
         } catch (e) {
             return err(new Error(`Failed to read or parse config file (${e})`));
         }
@@ -55,7 +64,7 @@ export class Config {
      * @returns
      */
     async save() {
-        await writeFile(CONFIG_FILE, JSON.stringify(this, undefined, 4));
+        await writeFile(this.#path, JSON.stringify(this, undefined, 4));
     }
 
     is_empty(): boolean {
