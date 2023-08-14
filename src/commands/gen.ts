@@ -29,6 +29,12 @@ export async function generate(
     client: Client,
     options: GenerateOptions,
 ) {
+    if (config.databases.length === 0) {
+        console.log(
+            "No databases in config (add some with `translations local add`). Exiting",
+        );
+        return;
+    }
     const cache = options.skipCache
         ? GenCache.empty(client)
         : await GenCache.open(client);
