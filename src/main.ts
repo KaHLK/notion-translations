@@ -6,6 +6,10 @@ import { Gen, Local, Remote, Util } from "./commands";
 import { Config } from "./config";
 import { CONFIG_FILE } from "./constants";
 
+interface GlobalOptions {
+    config?: string;
+}
+
 export default async function main(): Promise<number> {
     dotenv.config();
 
@@ -16,16 +20,22 @@ export default async function main(): Promise<number> {
         return 1;
     }
 
-    const config = await get_config();
     const notion = new Client({
         auth: process.env.NOTION_TOKEN,
         fetch: fetch,
     });
 
+    let config: Config;
+
     const app = new Command();
-    app.name("notion-translations").description(
-        "Fetch and parse translations from notion databases",
-    );
+    app.name("notion-translations")
+        .description("Fetch and parse translations from notion databases")
+        .addOption(
+            new Option(
+                "-c, --config <PATH>",
+                "Overwrite the path to the config file",
+            ),
+        );
 
     app.command("init")
         .description(
@@ -35,12 +45,15 @@ export default async function main(): Promise<number> {
             "-o, --out-dir <path>",
             "The path to save the processed language files to",
         )
-        .action(async (_, opt) => await Util.init(opt.opts(), config));
+        .action(async (options, cmd) => {
+            config = await get_config(cmd);
+            await Util.init(options, config);
+        });
 
     app.command("clean")
         .description("Cleans all temporary files")
         .option("-a, --all", "Also remove all config files")
-        .action(async (_, opt) => await Util.clean(opt.opts()));
+        .action(async (options) => await Util.clean(options));
 
     const local = app
         .command("local")
@@ -49,19 +62,22 @@ export default async function main(): Promise<number> {
     local
         .command("add")
         .description("Add new databases to the list")
-        .action(async () => {
+        .action(async (_, cmd) => {
+            config = await get_config(cmd);
             await Local.add(config, notion);
         });
     local
         .command("rm")
         .description("Remove a database from the list")
-        .action(async () => {
+        .action(async (_, cmd) => {
+            config = await get_config(cmd);
             await Local.remove(config);
         });
     local
         .command("list")
         .description("List all databases in the list")
-        .action(() => {
+        .action(async (_, cmd) => {
+            config = await get_config(cmd);
             Local.list(config);
         });
     local
@@ -69,7 +85,8 @@ export default async function main(): Promise<number> {
         .description(
             "Sync the title and properties of the databases in the list with their counterparts on notion",
         )
-        .action(async () => {
+        .action(async (_, cmd) => {
+            config = await get_config(cmd);
             await Local.sync(config, notion);
         });
 
@@ -83,7 +100,8 @@ export default async function main(): Promise<number> {
             "Create a new remote database with all the languages the other databases have.",
         )
         .option("--name <name>", "The name of the database to create")
-        .action(async (options) => {
+        .action(async (options, cmd) => {
+            config = await get_config(cmd);
             await Remote.new_database(config, notion, options.name);
         });
 
@@ -96,7 +114,8 @@ export default async function main(): Promise<number> {
             "-d, --dry-run",
             "Print the updates to be performed, but don't perform them",
         )
-        .action(async (options) => {
+        .action(async (options, cmd) => {
+            config = await get_config(cmd);
             await Remote.normalize(config, notion, options);
         });
 
@@ -114,7 +133,8 @@ export default async function main(): Promise<number> {
                 "The format to use for parsing the file",
             ).choices(Remote.import_formats),
         )
-        .action(async (file, format, options) => {
+        .action(async (file, format, options, cmd) => {
+            config = await get_config(cmd);
             await Remote.new_from_import(config, notion, file, format, options);
         });
     // TODO: 'lang <name>' -> create a new property (row) in all databases.
@@ -132,17 +152,22 @@ export default async function main(): Promise<number> {
         )
         .option("-i, --ignore", "Ignore all prompts")
         .option("-S, --skip-cache", "Skip the cache entirely")
-        .action(async (options) => {
-            await Gen.generate(config, notion, options);
+        .action(async (_options, cmd) => {
+            config = await get_config(cmd);
+            await Gen.generate(config, notion, cmd.optsWithGlobals());
         });
 
     await app.parseAsync(process.argv);
 
+    config ??= Config.empty();
     await config.save();
 
     return 0;
 }
 
-async function get_config(): Promise<Config> {
-    return (await Config.from_file()).unwrapOrElse(Config.empty);
+async function get_config(cmd: Command): Promise<Config> {
+    const options = cmd.optsWithGlobals() as GlobalOptions;
+    return (await Config.from_file(options.config)).unwrapOrElse(() =>
+        Config.empty(options.config),
+    );
 }
