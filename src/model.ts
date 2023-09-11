@@ -1,8 +1,14 @@
 import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { Notion } from "./util/notion";
+
+export interface LangMapping {
+    [key: Notion.Lng]: string;
+}
 
 export interface Database {
     id: string;
     name: string;
+    lang_mapping?: LangMapping;
 }
 
 export function database_object_to_database(
