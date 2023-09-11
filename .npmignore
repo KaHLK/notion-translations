@@ -1,6 +1,6 @@
-src
-notion-translate.json
-out
-.env
-rome.json
-tsconfig.json
+*
+!build/**/*
+!LICENSE.txt
+!index.js
+!package.json
+!readme.md
