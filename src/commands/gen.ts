@@ -5,7 +5,7 @@ import { mkdir } from "fs/promises";
 import { get_from_database } from "../api";
 import { GenCache } from "../cache";
 import { Config } from "../config";
-import { Database } from "../model";
+import { Database, LangMapping } from "../model";
 import { confirm } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 import { exists, save } from "../util/fs";
@@ -55,7 +55,7 @@ export async function generate(
     }
 
     console.log("Parsing pages");
-    const { duplicates, missing, languages } = parse_pages(pages);
+    const { duplicates, missing, languages } = parse_pages(pages, config.databases);
 
     const num_duplication = Array.from(duplicates.values()).reduce(
         (acc, cur) => acc + cur.length,
@@ -186,7 +186,10 @@ async function get_dir(
     return "";
 }
 
-function parse_pages(pages: PageObjectResponse[]): {
+function parse_pages(
+    pages: PageObjectResponse[],
+    databases: Database[],
+): {
     duplicates: Map<string, string[]>;
     missing: Map<string, string[]>;
     languages: Map<Notion.Lng, Notion.Language>;
@@ -207,6 +210,8 @@ function parse_pages(pages: PageObjectResponse[]): {
             continue;
         }
 
+        const db = databases.find(db => page.parent.type === "database_id" && db.id === page.parent.database_id);
+        
         const title = (_title[1] as Notion.Title).title
             .map((t) => t.plain_text)
             .join("_") as Notion.Key;
@@ -216,14 +221,16 @@ function parse_pages(pages: PageObjectResponse[]): {
         ) as [Notion.Lng, Notion.RichText][];
 
         for (const [name, prop] of rest) {
+            const mapped_named = (db?.lang_mapping?.[name] ?? name) as Notion.Lng;
+            
             const text = get_richtext(prop);
             if (text.length === 0) {
-                const arr = missing.get(name) ?? [];
-                missing.set(name, arr.concat(title));
+                const arr = missing.get(mapped_named) ?? [];
+                missing.set(mapped_named, arr.concat(title));
                 continue;
             }
 
-            const dict: Notion.Language = languages.get(name) ?? new Map();
+            const dict: Notion.Language = languages.get(mapped_named) ?? new Map();
             if (dict.has(title)) {
                 const arr = duplicates.get(title) ?? [];
                 duplicates.set(title, arr.concat(text));
@@ -233,7 +240,7 @@ function parse_pages(pages: PageObjectResponse[]): {
                 value: text,
                 context,
             });
-            languages.set(name, dict);
+            languages.set(mapped_named, dict);
         }
     }
 
