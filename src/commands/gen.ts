@@ -5,7 +5,7 @@ import { mkdir } from "fs/promises";
 import { get_from_database } from "../api";
 import { GenCache } from "../cache";
 import { Config } from "../config";
-import { Database, LangMapping } from "../model";
+import { Database } from "../model";
 import { confirm } from "../util/cli";
 import { notImplementedYet } from "../util/fn";
 import { exists, save } from "../util/fs";
