@@ -51,8 +51,9 @@ export default async function main(): Promise<number> {
         });
 
     app.command("clean")
-        .description("Cleans all temporary files")
-        .option("-a, --all", "Also remove all config files")
+        .description("Cleans all temporary files and cache")
+        .option("-a, --all", "Also remove all config files and cache files")
+        .option("-c, --no-cache", "Don't clear cache files")
         .action(async (options) => await Util.clean(options));
 
     const local = app
