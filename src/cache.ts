@@ -1,10 +1,10 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, rmdir, writeFile, readdir } from "fs/promises";
 
 import { Client } from "@notionhq/client";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 import { get_database, query_database } from "./api";
-import { exists } from "./util/fs";
+import { delete_dir, exists } from "./util/fs";
 import { Option, none, some } from "./util/option";
 import { Result, err, ok } from "./util/result";
 
@@ -49,6 +49,15 @@ export class GenCache {
             await mkdir(cache_dir, { recursive: true });
         }
         await writeFile(path, JSON.stringify(this.#data, undefined, 4));
+    }
+
+    static async delete() {
+        if (await exists(cache_dir)) {
+            const res = await delete_dir(cache_dir);
+            if (res.isErr()) {
+                console.error("Failed to delete cache directory:", res.error);
+            }
+        }
     }
 
     get(id: string): Option<CacheEntry> {
