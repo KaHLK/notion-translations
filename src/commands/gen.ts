@@ -55,12 +55,12 @@ export async function generate(
     }
 
     console.log("Parsing pages");
-    const { duplicates, missing, languages } = parse_pages(pages, config.databases);
-
-    const num_duplication = Array.from(duplicates.values()).reduce(
-        (acc, cur) => acc + cur.length,
-        0,
+    const { duplicates, missing, languages } = parse_pages(
+        pages,
+        config.databases,
     );
+
+    const num_duplication = duplicates.size;
     if (!options.ignore && num_duplication > 0) {
         console.log("Found", num_duplication, "duplicates");
         for (const [title, prop] of duplicates) {
@@ -190,12 +190,12 @@ function parse_pages(
     pages: PageObjectResponse[],
     databases: Database[],
 ): {
-    duplicates: Map<string, string[]>;
+    duplicates: Set<Notion.Key>;
     missing: Map<string, string[]>;
     languages: Map<Notion.Lng, Notion.Language>;
 } {
     const missing: Map<Notion.Lng, Notion.Key[]> = new Map();
-    const duplicates: Map<Notion.Key, string[]> = new Map();
+    const duplicates: Set<Notion.Key> = new Set();
 
     const languages: Map<Notion.Lng, Notion.Language> = new Map();
     for (const page of pages) {
@@ -210,8 +210,12 @@ function parse_pages(
             continue;
         }
 
-        const db = databases.find(db => page.parent.type === "database_id" && db.id === page.parent.database_id);
-        
+        const db = databases.find(
+            (db) =>
+                page.parent.type === "database_id" &&
+                db.id === page.parent.database_id,
+        );
+
         const title = (_title[1] as Notion.Title).title
             .map((t) => t.plain_text)
             .join("_") as Notion.Key;
@@ -221,8 +225,9 @@ function parse_pages(
         ) as [Notion.Lng, Notion.RichText][];
 
         for (const [name, prop] of rest) {
-            const mapped_named = (db?.lang_mapping?.[name] ?? name) as Notion.Lng;
-            
+            const mapped_named = (db?.lang_mapping?.[name] ??
+                name) as Notion.Lng;
+
             const text = get_richtext(prop);
             if (text.length === 0) {
                 const arr = missing.get(mapped_named) ?? [];
@@ -230,10 +235,10 @@ function parse_pages(
                 continue;
             }
 
-            const dict: Notion.Language = languages.get(mapped_named) ?? new Map();
+            const dict: Notion.Language =
+                languages.get(mapped_named) ?? new Map();
             if (dict.has(title)) {
-                const arr = duplicates.get(title) ?? [];
-                duplicates.set(title, arr.concat(text));
+                duplicates.add(title);
                 continue;
             }
             dict.set(title, {
