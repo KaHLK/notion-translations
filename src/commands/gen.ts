@@ -62,11 +62,22 @@ export async function generate(
 
     const num_duplication = duplicates.size;
     if (!options.ignore && num_duplication > 0) {
-        console.log("Found", num_duplication, "duplicates");
-        for (const [title, prop] of duplicates) {
-            notImplementedYet(
-                "TODO: Handle duplicate keys. If option.ci === true, say no to all prompts (just list the duplicates)",
-            );
+        const msg = `Found ${num_duplication} duplicate${
+            num_duplication > 1 ? "s" : ""
+        }`;
+        if (options.ci) {
+            console.log(`${msg}:`);
+        }
+        if (
+            options.ci ||
+            (
+                await confirm(`${msg}. Do you want to have them listed?`, true)
+            ).isSomeAnd((v) => v)
+        ) {
+            for (const title of duplicates) {
+                console.log(`  '${title}'`);
+            }
+            console.log();
         }
     }
 
