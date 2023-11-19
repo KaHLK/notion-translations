@@ -59,8 +59,6 @@ This script makes a few assumptions about the layout of the notion databases.
 # Roadmap
 
 A few things I would like to add
-* Handle duplicate keys when generating.
-  - Currently throws a `notImplementedYet` error if a duplicate key is found
 * Configure the output file name (it's currently only possible to set the output directory).
 * Set a filter based on columns of each database.
   - This could fx. be used to ignore specific `text` columns or ignore rows with a checkbox set.
