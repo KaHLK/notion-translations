@@ -68,7 +68,10 @@ export function gen_resx(lng: Notion.Language): string {
     for (const [key, { value, context }] of lng) {
         out.push(
             `<data name="${key}" xml:space="preserve">`,
-            `<value>${value}</value>`,
+            `<value>${value
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll(`"`, "&quot;")}</value>`,
         );
         if (context.length > 0) {
             out.push(`<comment>${context}</comment>`);
