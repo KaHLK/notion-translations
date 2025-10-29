@@ -57,6 +57,7 @@ export async function generate(
     const { duplicates, missing, languages } = parse_pages(
         pages,
         config.databases,
+        { plural: config.plural_key, list: config.list_key },
     );
 
     const num_duplication = duplicates.size;
@@ -199,6 +200,7 @@ async function get_dir(
 function parse_pages(
     pages: PageObjectResponse[],
     databases: Database[],
+    keys: { plural?: string; list?: string },
 ): {
     duplicates: Set<Notion.Key>;
     missing: Map<string, string[]>;
@@ -209,13 +211,15 @@ function parse_pages(
 
     const languages: Map<Notion.Lng, Notion.Language> = new Map();
     for (const page of pages) {
-        const properties = Object.entries(page.properties);
-        const _title = properties.find(([_, p]) => p.type === "title");
-        const _context = properties.find(([n]) => n === "context");
+        const title_property = page.properties.key as Notion.Title | undefined;
+        const context_property = page.properties.context as
+            | Notion.RichText
+            | undefined;
 
         if (
             !(
                 title_property &&
+                title_property.type === "title" &&
                 context_property
             )
         ) {
@@ -225,16 +229,41 @@ function parse_pages(
             continue;
         }
 
+        let plural_value: string | undefined;
+        if (keys.plural !== undefined) {
+            const item = page.properties[keys.plural];
+            if (item.type !== "select") {
+                console.error(
+                    `Column '${keys.plural}' should be a 'Select' column`,
+                );
+                continue;
+            }
+            plural_value = item.select?.name.toLowerCase();
+        }
+        let is_list = false;
+        if (keys.list !== undefined) {
+            const item = page.properties[keys.list];
+            if (item.type !== "checkbox") {
+                console.error(
+                    `Column '${keys.list}' should be a 'Checkbox' column`,
+                );
+                continue;
+            }
+            is_list = item.checkbox;
+        }
+
         const db = databases.find(
             (db) =>
                 page.parent.type === "database_id" &&
                 db.id === page.parent.database_id,
         );
 
-        const title = (_title[1] as Notion.Title).title
+        const title = (title_property as Notion.Title).title
             .map((t) => t.plain_text)
             .join("_") as Notion.Key;
-        const context = get_richtext(_context[1] as Notion.RichText);
+        const context = get_richtext(context_property as Notion.RichText);
+
+        const properties = Object.entries(page.properties);
         const rest = properties.filter(
             ([n, p]) => n !== "context" && p.type === "rich_text",
         ) as [Notion.Lng, Notion.RichText][];
@@ -252,15 +281,31 @@ function parse_pages(
 
             const dict: Notion.Language =
                 languages.get(mapped_named) ?? new Map();
-            if (dict.has(title)) {
+            if (dict.has(title) && !is_list && plural_value === undefined) {
                 duplicates.add(title);
                 continue;
             }
-            dict.set(title, {
-                type: Notion.LanguageValueType.Single,
-                value: text,
-                context,
-            });
+            if (is_list || plural_value !== undefined) {
+                const value = (dict.get(title) as Notion.MultipleValue) ?? {
+                    type: is_list
+                        ? Notion.LanguageValueType.List
+                        : Notion.LanguageValueType.Plural,
+                    values: [],
+                };
+                value.values.push({
+                    type: Notion.LanguageValueType.Single,
+                    value: text,
+                    context,
+                    plural: plural_value,
+                });
+                dict.set(title, value);
+            } else {
+                dict.set(title, {
+                    type: Notion.LanguageValueType.Single,
+                    value: text,
+                    context,
+                });
+            }
             languages.set(mapped_named, dict);
         }
     }
@@ -297,9 +342,22 @@ function gen_android(lng: Notion.Language): string {
                 out.push(`    <string name="${key}">${item.value}</string>`);
                 continue;
             }
-            case Notion.LanguageValueType.List: 
+            case Notion.LanguageValueType.List: {
+                out.push(`    <string-array name="${key}">`);
+                for (const value of item.values) {
+                    out.push(`        <item>${value.value}</item>`);
+                }
+                out.push("    </string-array>");
+                continue;
+            }
             case Notion.LanguageValueType.Plural: {
-                // TODO
+                out.push(`    <plurals name="${key}">`);
+                for (const value of item.values) {
+                    out.push(
+                        `        <item quantity="${value.plural}">${value.value}</item>`,
+                    );
+                }
+                out.push("    </plurals>");
                 continue;
             }
         }
