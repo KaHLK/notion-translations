@@ -17,5 +17,19 @@ export namespace Notion {
     export type Lng = string & { readonly lng: unique symbol };
     export type Key = string & { readonly title: unique symbol };
 
-    export type Language = Map<Key, { value: string; context: string }>;
+    export enum LanguageValueType {
+        Single,
+        List,
+        Plural,
+    }
+    export type SingleValue = {
+        type: LanguageValueType.Single;
+        value: string;
+        context: string;
+    };
+    export type MultipleValue = {
+        type: LanguageValueType.List | LanguageValueType.Plural;
+        values: (SingleValue & { plural?: string })[];
+    };
+    export type Language = Map<Key, SingleValue | MultipleValue>;
 }
