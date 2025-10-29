@@ -1,10 +1,10 @@
-import { readFile, rm, writeFile } from "fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 
 import { CONFIG_FILE } from "./constants";
-import { Database } from "./model";
+import type { Database } from "./model";
 import { exists } from "./util/fs";
-import { Result, err, ok } from "./util/result";
-import { NonFunctionMembers } from "./util/types";
+import { err, ok, type Result } from "./util/result";
+import type { NonFunctionMembers } from "./util/types";
 
 type ConfigJson = Partial<NonFunctionMembers<Config>>;
 
@@ -12,15 +12,28 @@ export class Config {
     #path: string;
     out: string;
     databases: Database[];
+    plural_key?: string;
+    list_key?: string;
 
     private constructor(
-        out: string,
-        databases: Database[],
+        {
+            out,
+            databases,
+            plural_key,
+            list_key,
+        }: {
+            out: string;
+            databases: Database[];
+            plural_key?: string;
+            list_key?: string;
+        },
         path: string = CONFIG_FILE,
     ) {
         this.#path = path;
         this.out = out;
         this.databases = databases;
+        this.plural_key = plural_key;
+        this.list_key = list_key;
     }
 
     /**
@@ -29,7 +42,7 @@ export class Config {
      * @returns A new empty config
      */
     static empty(path?: string): Config {
-        return new Config("", [], path);
+        return new Config({ out: "", databases: [] }, path);
     }
 
     /**
@@ -48,7 +61,15 @@ export class Config {
         }
         try {
             const obj = JSON.parse(config_str) as ConfigJson;
-            const config = new Config(obj.out ?? "", obj.databases ?? [], path);
+            const config = new Config(
+                {
+                    out: obj.out ?? "",
+                    databases: obj.databases ?? [],
+                    plural_key: obj.plural_key,
+                    list_key: obj.list_key,
+                },
+                path,
+            );
             return ok(config);
         } catch (e) {
             // TODO: Return different errors instead of throwing completely, and then handle the errors better
