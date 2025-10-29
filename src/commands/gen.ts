@@ -1,22 +1,21 @@
-import { Client } from "@notionhq/client";
-import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-import { mkdir } from "fs/promises";
+import { mkdir } from "node:fs/promises";
+import type { Client } from "@notionhq/client";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 import { get_from_database } from "../api";
 import { GenCache } from "../cache";
-import { Config } from "../config";
-import { Database } from "../model";
+import type { Config } from "../config";
+import type { Database } from "../model";
 import { confirm } from "../util/cli";
-import { notImplementedYet } from "../util/fn";
 import { exists, save } from "../util/fs";
 import { Notion } from "../util/notion";
-import { Result, err } from "../util/result";
+import { err, type Result } from "../util/result";
 import { gen_resx } from "./gen/resx";
 
 // TODO: Allow for setting the name of the output files (in some form of format, where a part is replaced with the language or it is appended if no replaceable part is found).
 
 export const generate_formats = ["i18next", "android", "resx"] as const;
-export type GenerateFormat = typeof generate_formats[number];
+export type GenerateFormat = (typeof generate_formats)[number];
 
 interface GenerateOptions {
     format: GenerateFormat;
@@ -30,7 +29,7 @@ export async function generate(
     options: GenerateOptions,
 ) {
     if (config.databases.length === 0) {
-        console.log(
+        console.info(
             "No databases in config (add some with `translations local add`). Exiting",
         );
         return;
@@ -54,7 +53,7 @@ export async function generate(
         }
     }
 
-    console.log("Parsing pages");
+    console.info("Parsing pages");
     const { duplicates, missing, languages } = parse_pages(
         pages,
         config.databases,
@@ -66,7 +65,7 @@ export async function generate(
             num_duplication > 1 ? "s" : ""
         }`;
         if (options.ci) {
-            console.log(`${msg}:`);
+            console.info(`${msg}:`);
         }
         if (
             options.ci ||
@@ -75,9 +74,9 @@ export async function generate(
             ).isSomeAnd((v) => v)
         ) {
             for (const title of duplicates) {
-                console.log(`  '${title}'`);
+                console.info(`  '${title}'`);
             }
-            console.log();
+            console.info();
         }
     }
 
@@ -96,14 +95,14 @@ export async function generate(
             ).expect("Please answer with a 'y' or 'n'.");
         }
         if (answer) {
-            console.log("Missing translations:");
+            console.info("Missing translations:");
             for (const [lang, keys] of missing.entries()) {
                 console.group(`${lang}:`);
                 for (const key of keys) {
-                    console.log(`'${key}'`);
+                    console.info(`'${key}'`);
                 }
                 console.groupEnd();
-                console.log();
+                console.info();
             }
         }
     }
@@ -113,7 +112,7 @@ export async function generate(
         return;
     }
 
-    console.log("Generating language files");
+    console.info("Generating language files");
     for (const [lng_name, lng] of languages) {
         let path: string;
         let str: string;
@@ -143,7 +142,7 @@ export async function generate(
             }
         }
 
-        console.log("Saving", lng_name, "to file:", path);
+        console.info("Saving", lng_name, "to file:", path);
         await save(path, str);
     }
 }
@@ -156,7 +155,7 @@ async function get_db_pages(
     const cached = await cache.get_valid_entry(db.id);
 
     if (cached.isOk()) {
-        console.log(`Found cached values for '${db.name}'`);
+        console.info(`Found cached values for '${db.name}'`);
         return cached.map((v) => v.pages) as Result<
             PageObjectResponse[],
             never
@@ -167,7 +166,7 @@ async function get_db_pages(
         return err(cached.error.error);
     }
 
-    console.log(`Fetching pages from database '${db.name}'`);
+    console.info(`Fetching pages from database '${db.name}'`);
     const pages = await get_from_database(client, db.id);
     if (pages.isErr()) {
         return pages;
@@ -214,8 +213,13 @@ function parse_pages(
         const _title = properties.find(([_, p]) => p.type === "title");
         const _context = properties.find(([n]) => n === "context");
 
-        if (!_title || !_context) {
-            console.log(
+        if (
+            !(
+                title_property &&
+                context_property
+            )
+        ) {
+            console.info(
                 `Page with id '${page.id}' did not contain a title or context column`,
             );
             continue;
