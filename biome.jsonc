@@ -1,0 +1,147 @@
+{
+    "$schema": "node_modules/@biomejs/biome/configuration_schema.json",
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on",
+                "useSortedAttributes": "off",
+                "useSortedKeys": "off"
+            }
+        },
+        "enabled": true
+    },
+    "css": {
+        "linter": {
+            "enabled": false
+        }
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "includes": [
+            "**",
+            "!**/src/**/*.json",
+            "!android",
+            "!ios",
+            "!e2e",
+            "!jest",
+            "!**/__mocks__"
+        ]
+    },
+    "formatter": {
+        "bracketSpacing": true,
+        "enabled": true,
+        "formatWithErrors": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 80
+    },
+    "javascript": {
+        "formatter": {
+            "arrowParentheses": "always",
+            "jsxQuoteStyle": "double",
+            "quoteProperties": "asNeeded",
+            "quoteStyle": "double",
+            "semicolons": "always",
+            "trailingCommas": "all"
+        }
+    },
+    "json": {
+        "formatter": {
+            "trailingCommas": "none"
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "complexity": {
+                "noForEach": "error",
+                "noUselessStringConcat": "error",
+                "noVoid": "error",
+                "useWhile": "warn"
+            },
+            "nursery": "off",
+            "performance": {
+                "noDelete": "error",
+                "useTopLevelRegex": "warn"
+            },
+            "recommended": true,
+            "style": {
+                "noCommonJs": "error",
+                "noDefaultExport": "error",
+                "noDoneCallback": "error",
+                "noExportedImports": "error",
+                "noImplicitBoolean": "error",
+                "noInferrableTypes": "warn",
+                "noNamespace": "error",
+                "noParameterAssign": "error",
+                "noParameterProperties": "error",
+                "noSubstr": "error",
+                "noUnusedTemplateLiteral": "warn",
+                "noUselessElse": "warn",
+                "noYodaExpression": "warn",
+                "useAsConstAssertion": "on",
+                "useAtIndex": "on",
+                "useBlockStatements": "error",
+                "useCollapsedElseIf": "warn",
+                "useCollapsedIf": "warn",
+                "useConsistentArrayType": {
+                    "level": "warn",
+                    "options": {
+                        "syntax": "shorthand"
+                    }
+                },
+                "useConsistentBuiltinInstantiation": "error",
+                "useDefaultParameterLast": "error",
+                "useExplicitLengthCheck": "error",
+                "useForOf": "warn",
+                "useFragmentSyntax": "error",
+                "useNumberNamespace": "error",
+                "useSelfClosingElements": "warn",
+                "useShorthandAssign": "warn",
+                "useSingleVarDeclarator": "warn",
+                "useThrowNewError": "error",
+                "useThrowOnlyError": "error",
+                "useTrimStartEnd": "warn",
+                // Disable recommended
+                "noNonNullAssertion": "off",
+                "useLiteralEnumMembers": "off"
+            },
+            "suspicious": {
+                "noConsole": {
+                    "level": "error",
+                    "options": {
+                        "allow": [
+                            "assert",
+                            "debug",
+                            "error",
+                            "group",
+                            "groupCollapsed",
+                            "groupEnd",
+                            "info",
+                            "warn"
+                        ]
+                    }
+                },
+                "noDuplicateTestHooks": "error",
+                "noEmptyBlockStatements": "warn",
+                "noEvolvingTypes": "warn",
+                "noExportsInTest": "warn",
+                "noFocusedTests": "error",
+                "noMisplacedAssertion": "warn",
+                "noVar": "error",
+                "useAwait": "warn",
+                "useErrorMessage": "warn",
+                "useNumberToFixedDigitsArgument": "warn",
+                // Disable recommended
+                "noExplicitAny": "off",
+                "noThenProperty": "off"
+            }
+        }
+    },
+    "vcs": {
+        "clientKind": "git",
+        "defaultBranch": "master",
+        "enabled": true,
+        "useIgnoreFile": true
+    }
+}

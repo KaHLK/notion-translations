@@ -1,14 +1,14 @@
 import { isNotionClientError } from "@notionhq/client";
-import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export function map_error(e: unknown, message: string): Error {
     if (isNotionClientError(e)) {
-        return Error(`${message} \n[${e.code}] ${e.message}`);
-    } else {
-        return Error(`Unknown error occurred: ${e} | ${message}`);
+        return new Error(`${message} \n[${e.code}] ${e.message}`);
     }
+    return new Error(`Unknown error occurred: ${e} | ${message}`);
 }
 
+// biome-ignore lint/style/noNamespace: Keep for now
 export namespace Notion {
     export type Properties = PageObjectResponse["properties"][string];
     export type Title = Extract<Properties, { type: "title" }>;

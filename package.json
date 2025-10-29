@@ -16,8 +16,8 @@
     "prepare": "yarn build"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.2",
     "@types/prompts": "2.4.4",
-    "rome": "12.1.2",
     "typescript": "5.0.4"
   },
   "dependencies": {
