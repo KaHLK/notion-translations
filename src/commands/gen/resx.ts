@@ -65,19 +65,25 @@ export function gen_resx(lng: Notion.Language): string {
         "<root>",
         resx_meta,
     ];
-    for (const [key, { value, context }] of lng) {
+    for (const [key, item] of lng) {
+        if (item.type !== Notion.LanguageValueType.Single) {
+            console.error(
+                "Items are not allowed to be lists or plurals when exporting to resx format",
+            );
+            continue;
+        }
         out.push(
             `<data name="${key
                 .replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
                 .replaceAll(`"`, "&quot;")}" xml:space="preserve">`,
-            `<value>${value
+            `<value>${item.value
                 .replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
                 .replaceAll(`"`, "&quot;")}</value>`,
         );
-        if (context.length > 0) {
-            out.push(`<comment>${context}</comment>`);
+        if (item.context.length > 0) {
+            out.push(`<comment>${item.context}</comment>`);
         }
         out.push("</data>");
     }

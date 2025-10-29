@@ -257,6 +257,7 @@ function parse_pages(
                 continue;
             }
             dict.set(title, {
+                type: Notion.LanguageValueType.Single,
                 value: text,
                 context,
             });
@@ -273,8 +274,14 @@ function parse_pages(
 
 function gen_i18next(lng: Notion.Language): string {
     const out: { [key: Notion.Key]: string } = {};
-    for (const [key, { value }] of lng) {
-        out[key] = value;
+    for (const [key, item] of lng) {
+        if (item.type !== Notion.LanguageValueType.Single) {
+            console.error(
+                "Items are not allowed to be lists or plurals when exporting to i18next format",
+            );
+            continue;
+        }
+        out[key] = item.value;
     }
     return JSON.stringify(out, undefined, 4);
 }
@@ -284,8 +291,18 @@ function gen_android(lng: Notion.Language): string {
         `<?xml version="1.0" encoding="utf-8"?>`,
         `<resources xmlns:tools="http://schemas.android.com/tools"`,
     ];
-    for (const [key, { value }] of lng) {
-        out.push(`    <string name="${key}">${value}</string>`);
+    for (const [key, item] of lng) {
+        switch (item.type) {
+            case Notion.LanguageValueType.Single: {
+                out.push(`    <string name="${key}">${item.value}</string>`);
+                continue;
+            }
+            case Notion.LanguageValueType.List: 
+            case Notion.LanguageValueType.Plural: {
+                // TODO
+                continue;
+            }
+        }
     }
     out.push("</resources>");
     return out.join("\n");
