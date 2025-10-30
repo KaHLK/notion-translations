@@ -1,5 +1,9 @@
 import { Notion } from "../../util/notion.ts";
 
+export function get_resx_path(dir: string, lng_name: string): string {
+    return `${dir}Repositories.LocalizationRepository.${lng_name}.resx`;
+}
+
 const resx_meta = `<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
 <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
 <xsd:element name="root" msdata:IsDataSet="true">
