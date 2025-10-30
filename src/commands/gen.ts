@@ -214,22 +214,34 @@ function parse_pages(
         let plural_value: string | undefined;
         if (keys.plural !== undefined) {
             const item = page.properties[keys.plural];
+            if (item === undefined) {
+                console.error(
+                    `Column '${keys.plural}' should be present on the notion database`,
+                );
+                break;
+            }
             if (item.type !== "select") {
                 console.error(
                     `Column '${keys.plural}' should be a 'Select' column`,
                 );
-                continue;
+                break;
             }
             plural_value = item.select?.name.toLowerCase();
         }
         let is_list = false;
         if (keys.list !== undefined) {
             const item = page.properties[keys.list];
+            if (item === undefined) {
+                console.error(
+                    `Column '${keys.list}' should be present on the notion database`,
+                );
+                break;
+            }
             if (item.type !== "checkbox") {
                 console.error(
                     `Column '${keys.list}' should be a 'Checkbox' column`,
                 );
-                continue;
+                break;
             }
             is_list = item.checkbox;
         }
