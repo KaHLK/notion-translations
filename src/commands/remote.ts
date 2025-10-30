@@ -1,5 +1,5 @@
-import { Client } from "@notionhq/client";
-import {
+import type { Client } from "@notionhq/client";
+import type {
     CreateDatabaseParameters,
     CreatePageParameters,
     DatabaseObjectResponse,
@@ -7,21 +7,21 @@ import {
 } from "@notionhq/client/build/src/api-endpoints";
 
 import {
-    DatabaseUpdate,
     create_database,
     create_page,
+    type DatabaseUpdate,
     get_database,
     get_page_from_database,
     get_pages,
     update_database,
     update_page,
 } from "../api";
-import { Config } from "../config";
-import { Database, database_object_to_database } from "../model";
+import type { Config } from "../config";
+import { type Database, database_object_to_database } from "../model";
 import { autocomplete, confirm, get_text } from "../util/cli";
-import { Result, err, ok } from "../util/result";
-import { Option, none, some } from "../util/option";
-import { ImportFormat, parse_file } from "./remote/parse";
+import { none, type Option, some } from "../util/option";
+import { err, ok, type Result } from "../util/result";
+import { type ImportFormat, parse_file } from "./remote/parse";
 
 async function get_local_databases(
     config: Config,
@@ -296,6 +296,7 @@ export async function new_from_import(
     }
     const units = _units.value;
 
+    let db: DatabaseObjectResponse;
     let parent_id: string;
     let parent_name: string;
     if (!options.append) {
@@ -334,11 +335,12 @@ export async function new_from_import(
         }
         parent_id = res.value.id;
         parent_name = res.value.title.at(0)?.plain_text ?? "";
+        db = res.value;
     } else {
         parent_id = options.append;
-        parent_name =
-            (await get_database(client, parent_id)).unwrap().title.at(0)
-                ?.plain_text ?? "";
+        const res = (await get_database(client, parent_id)).unwrap();
+        parent_name = res.title.at(0)?.plain_text ?? "";
+        db = res;
     }
 
     if (!config.databases.some((db) => db.id === parent_id)) {
@@ -347,9 +349,46 @@ export async function new_from_import(
             config.databases.push({ id: parent_id, name: parent_name });
         }
     }
-    let i = 0;
-    for (const unit of units) {
-        i++;
+
+    const parsed_languages = units.reduce((acc, cur) => {
+        for (const lng of Object.keys(cur.languages)) {
+            acc.add(lng);
+        }
+        return acc;
+    }, new Set<string>());
+    const available_languages = new Set(
+        Object.entries(db.properties)
+            .filter(
+                ([key, { type }]) => type === "rich_text" && key !== "context",
+            )
+            .map(([key]) => key),
+    );
+    const new_languages = parsed_languages.difference(available_languages);
+    if (new_languages.size > 0) {
+        const db_update: DatabaseUpdate = {};
+        for (const lng of new_languages) {
+            db_update.properties ??= {};
+            db_update.properties[lng] = {
+                name: lng,
+                type: "rich_text",
+                rich_text: {},
+            };
+        }
+
+        const res = await update_database(client, parent_id, db_update);
+        if (res.isErr()) {
+            console.error(
+                "Failed to update database with new columns",
+                res.err,
+            );
+            return;
+        }
+    }
+
+    for (const i in units) {
+        const unit = units[i];
+
+        // TODO: handle list and plurals
         const existing = await get_page_from_database(
             client,
             parent_id,
