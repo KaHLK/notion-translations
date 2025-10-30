@@ -1,14 +1,17 @@
-import { readFile } from "node:fs/promises";
-
-import { Option, some, none } from "../../util/option";
+import { open, readdir, readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { type Element, xml2js } from "xml-js";
+import type { Config } from "../../config";
 import { get_text } from "../../util/cli";
+import { none, type Option, some } from "../../util/option";
 
 export const import_formats = [
     "aggregate",
     "key-value",
     "poeditor-export-json",
+    "android",
 ] as const;
-export type ImportFormat = typeof import_formats[number];
+export type ImportFormat = (typeof import_formats)[number];
 
 type KeyValueJSON = {
     [key: string]: string | { [v: string]: string };
@@ -42,28 +45,31 @@ async function read_json<T>(path: string): Promise<Option<T>> {
 
 type TranslationUnit = {
     key: string;
-    languages: { [lng: string]: string };
     context: string;
+    languages: Record<string, string>;
 };
 export async function parse_file(
     file_path: string,
     format: ImportFormat,
 ): Promise<Option<TranslationUnit[]>> {
-    const res = await (
-        await read_json(file_path)
-    ).andThenAsync(async (file) => {
-        switch (format) {
-            case "key-value": {
-                return await parse_key_value(file);
+    if (format === "android") {
+        return await parse_android(file_path);
+    }
+    const res = await (await read_json(file_path)).andThenAsync(
+        async (file) => {
+            switch (format) {
+                case "key-value": {
+                    return await parse_key_value(file);
+                }
+                case "aggregate": {
+                    return parse_aggregate(file);
+                }
+                case "poeditor-export-json": {
+                    return await parse_poeditor_export(file);
+                }
             }
-            case "aggregate": {
-                return parse_aggregate(file);
-            }
-            case "poeditor-export-json": {
-                return await parse_poeditor_export(file);
-            }
-        }
-    });
+        },
+    );
 
     return res;
 }
@@ -163,4 +169,109 @@ async function parse_poeditor_export(
             languages: { [lng]: v.definition },
         })),
     );
+}
+
+async function parse_android(
+    file_path: string,
+): Promise<Option<TranslationUnit[]>> {
+    const entries: [string, Element[]][] = [];
+
+    const file_info = await stat(file_path);
+    if (file_info.isDirectory()) {
+        const defaultLng = (
+            await get_text(
+                "What language does the 'values/strings.xml' file describe",
+            )
+        ).expect("Expected a language to be entered. Exiting");
+        entries.push(
+            ...(
+                await Promise.all(
+                    (
+                        await readdir(file_path)
+                    )
+                        .filter((v) => v.startsWith("values"))
+                        .map((v) => {
+                            const [_, lng] = v.split("-");
+                            return read_xml(
+                                path.join(file_path, v, "strings.xml"),
+                                lng ?? defaultLng ?? "en",
+                            );
+                        }),
+                )
+            )
+                .filter((v) => v.isSome())
+                .map((v) => v.value),
+        );
+    } else {
+        const lng = (
+            await get_text(
+                "What language does the 'values/strings.xml' file describe",
+            )
+        ).expect("Expected a language to be entered. Exiting");
+        const file = xml2js((await readFile(file_path)).toString());
+
+        const el = file.elements[0] as Element;
+        if (el.name !== "resources") {
+            console.error("Expected 'resources' as outer xml element of file");
+            return none();
+        }
+        entries.push([lng, el.elements ?? []]);
+    }
+
+    if (entries.length === 0) {
+        return none();
+    }
+
+    const res = new Map<string, TranslationUnit>();
+    for (const [lng, elements] of entries) {
+        for (const el of elements) {
+            if (el.type !== "element") {
+                continue;
+            }
+            const key = el.attributes?.name as string;
+            const unit = res.get(key) ?? { key, context: "", languages: {} };
+            switch (el.name) {
+                case "string": {
+                    const value = el.elements?.at(0)?.text as string;
+                    if (value === undefined) {
+                        console.error("Text not defined for", key);
+                        continue;
+                    }
+                    unit.languages[lng] = value;
+                    break;
+                }
+                case "string-array":
+                case "plurals": {
+                    console.warn(
+                        "'string-array' and 'plurals' are not yet supported",
+                    );
+                    continue;
+                }
+                default: {
+                    console.info(`Unhandled tag type '${el.type}'`);
+                    continue;
+                }
+            }
+            res.set(key, unit);
+        }
+    }
+    return some(Array.from(res.values()));
+}
+
+async function read_xml(
+    file_path: string,
+    lng: string,
+): Promise<Option<[string, Element[]]>> {
+    const file = xml2js((await readFile(file_path)).toString());
+
+    const el = file.elements[0] as Element;
+    if (el.name !== "resources") {
+        console.error(
+            "Expected 'resources' as outer xml element of file",
+            file_path,
+        );
+        return none();
+    }
+
+    return some([lng, el.elements ?? []]);
 }
