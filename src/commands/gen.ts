@@ -10,7 +10,13 @@ import { confirm } from "../util/cli.ts";
 import { exists, save } from "../util/fs.ts";
 import { Notion } from "../util/notion.ts";
 import { err, type Result } from "../util/result.ts";
-import { gen_resx } from "./gen/resx.ts";
+import {
+    gen_android,
+    get_android_path,
+    transform_android_dir,
+} from "./gen/android.ts";
+import { gen_i18next, get_i18next_path } from "./gen/i18next.ts";
+import { gen_resx, get_resx_path } from "./gen/resx.ts";
 
 // TODO: Allow for setting the name of the output files (in some form of format, where a part is replaced with the language or it is appended if no replaceable part is found).
 
@@ -114,36 +120,26 @@ export async function generate(
     }
 
     console.info("Generating language files");
-    for (const [lng_name, lng] of languages) {
-        let path: string;
-        let str: string;
+    const [gen_fn, get_path, transform_dir]: [
+        gen_fn: (lng: Notion.Language) => string,
+        get_path: (dir: string, lng_name: string) => string,
+        transform_dir?: (lng_name: string) => (dir: string) => string,
+    ] = (() => {
         switch (options.format) {
-            case "android": {
-                str = gen_android(lng);
-                const dir = await get_dir(
-                    config.out,
-                    (dir) => `${dir}-${lng_name}`,
-                );
-                path = `${dir}strings.xml`;
-                break;
-            }
-
-            case "i18next": {
-                str = gen_i18next(lng);
-                path = `${await get_dir(config.out)}${lng_name}.json`;
-                break;
-            }
-
-            case "resx": {
-                str = gen_resx(lng);
-                path = `${await get_dir(
-                    config.out,
-                )}Repositories.LocalizationRepository.${lng_name}.resx`;
-                break;
-            }
+            case "android":
+                return [gen_android, get_android_path, transform_android_dir];
+            case "i18next":
+                return [gen_i18next, get_i18next_path];
+            case "resx":
+                return [gen_resx, get_resx_path];
         }
+    })();
+    for (const [lng_name, lng] of languages) {
+        const str = gen_fn(lng);
+        const dir = await get_dir(config.out, transform_dir?.(lng_name));
 
-        console.info("Saving", lng_name, "to file:", path);
+        const path = get_path(dir, lng_name);
+        console.info("Saving", lng_name, "to", path);
         await save(path, str);
     }
 }
@@ -181,20 +177,6 @@ async function get_db_pages(
     cache.store(db.id, last_updated, pages.value);
 
     return pages;
-}
-
-async function get_dir(
-    dir?: string,
-    transform?: (v: string) => string,
-): Promise<string> {
-    if (dir) {
-        const path = transform ? transform(dir) : dir;
-        if (!(await exists(transform ? transform(dir) : dir))) {
-            await mkdir(path, { recursive: true });
-        }
-        return `${path}/`;
-    }
-    return "";
 }
 
 function parse_pages(
@@ -317,58 +299,23 @@ function parse_pages(
     };
 }
 
-function gen_i18next(lng: Notion.Language): string {
-    const out: { [key: Notion.Key]: string } = {};
-    for (const [key, item] of lng) {
-        if (item.type !== Notion.LanguageValueType.Single) {
-            console.error(
-                "Items are not allowed to be lists or plurals when exporting to i18next format",
-            );
-            continue;
-        }
-        out[key] = item.value;
-    }
-    return JSON.stringify(out, undefined, 4);
-}
-
-function gen_android(lng: Notion.Language): string {
-    const out: string[] = [
-        `<?xml version="1.0" encoding="utf-8"?>`,
-        `<resources xmlns:tools="http://schemas.android.com/tools"`,
-    ];
-    for (const [key, item] of lng) {
-        switch (item.type) {
-            case Notion.LanguageValueType.Single: {
-                out.push(`    <string name="${key}">${item.value}</string>`);
-                continue;
-            }
-            case Notion.LanguageValueType.List: {
-                out.push(`    <string-array name="${key}">`);
-                for (const value of item.values) {
-                    out.push(`        <item>${value.value}</item>`);
-                }
-                out.push("    </string-array>");
-                continue;
-            }
-            case Notion.LanguageValueType.Plural: {
-                out.push(`    <plurals name="${key}">`);
-                for (const value of item.values) {
-                    out.push(
-                        `        <item quantity="${value.plural}">${value.value}</item>`,
-                    );
-                }
-                out.push("    </plurals>");
-                continue;
-            }
-        }
-    }
-    out.push("</resources>");
-    return out.join("\n");
-}
-
 function get_richtext(rich_text: Notion.RichText): string {
     return rich_text.rich_text
         .map((rt) => rt.plain_text)
         .join(" ")
         .trim();
+}
+
+async function get_dir(
+    dir?: string,
+    transform?: (v: string) => string,
+): Promise<string> {
+    if (dir) {
+        const path = transform ? transform(dir) : dir;
+        if (!(await exists(transform ? transform(dir) : dir))) {
+            await mkdir(path, { recursive: true });
+        }
+        return `${path}/`;
+    }
+    return "";
 }
