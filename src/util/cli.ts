@@ -1,6 +1,6 @@
 import prompts from "prompts";
 
-import { Option, none, some } from "./option";
+import { none, type Option, some } from "./option.ts";
 
 export async function autocomplete_multiselect<T>(
     msg: string,

@@ -1,12 +1,11 @@
-import { mkdir, readFile, rmdir, writeFile, readdir } from "fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import type { Client } from "@notionhq/client";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints.ts";
 
-import { Client } from "@notionhq/client";
-import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-
-import { get_database, query_database } from "./api";
-import { delete_dir, exists } from "./util/fs";
-import { Option, none, some } from "./util/option";
-import { Result, err, ok } from "./util/result";
+import { get_database, query_database } from "./api.ts";
+import { delete_dir, exists } from "./util/fs.ts";
+import { none, type Option, some } from "./util/option.ts";
+import { err, ok, type Result } from "./util/result.ts";
 
 export type CacheEntry = { last_updated: number; pages: PageObjectResponse[] };
 type FetchedCache = {
@@ -39,7 +38,7 @@ export class GenCache {
             const cache_str = (await readFile(path)).toString();
             const obj = JSON.parse(cache_str) as FetchedCache;
             return new GenCache(obj, client);
-        } catch (e) {
+        } catch (_e) {
             return GenCache.empty(client);
         }
     }

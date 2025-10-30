@@ -1,16 +1,16 @@
-import { Client, collectPaginatedAPI } from "@notionhq/client";
-import {
+import { type Client, collectPaginatedAPI } from "@notionhq/client";
+import type {
     CreateDatabaseParameters,
     CreatePageParameters,
     DatabaseObjectResponse,
     PageObjectResponse,
     QueryDatabaseParameters,
     UpdateDatabaseParameters,
+    UpdateDatabaseResponse,
     UpdatePageParameters,
-} from "@notionhq/client/build/src/api-endpoints";
-
-import { Notion, map_error } from "./util/notion";
-import { Result, err, ok } from "./util/result";
+} from "@notionhq/client/build/src/api-endpoints.ts";
+import { map_error, type Notion } from "./util/notion.ts";
+import { err, ok, type Result } from "./util/result.ts";
 
 export async function get_databases(
     client: Client,
@@ -71,14 +71,14 @@ export async function update_database(
     client: Client,
     id: string,
     update: DatabaseUpdate,
-): Promise<Result<null, Error>> {
+): Promise<Result<UpdateDatabaseResponse, Error>> {
     try {
         const res = await client.databases.update({
             database_id: id,
             ...update,
         });
 
-        return ok(null);
+        return ok(res);
     } catch (e) {
         return err(
             map_error(e, `Error occurred trying to update database'${id}'`),
@@ -171,7 +171,7 @@ export async function get_page_from_database(
                     .map((t) => t.plain_text)
                     .join(" "),
             )
-            .findIndex((t) => t === title_query);
+            .indexOf(title_query);
 
         if (idx >= 0) {
             return ok(res[idx]);

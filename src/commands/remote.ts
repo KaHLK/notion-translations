@@ -4,7 +4,7 @@ import type {
     CreatePageParameters,
     DatabaseObjectResponse,
     PageObjectResponse,
-} from "@notionhq/client/build/src/api-endpoints";
+} from "@notionhq/client/build/src/api-endpoints.ts";
 
 import {
     create_database,
@@ -15,13 +15,15 @@ import {
     get_pages,
     update_database,
     update_page,
-} from "../api";
-import type { Config } from "../config";
-import { type Database, database_object_to_database } from "../model";
-import { autocomplete, confirm, get_text } from "../util/cli";
-import { none, type Option, some } from "../util/option";
-import { err, ok, type Result } from "../util/result";
-import { type ImportFormat, parse_file } from "./remote/parse";
+} from "../api.ts";
+import type { Config } from "../config.ts";
+import { type Database, database_object_to_database } from "../model.ts";
+import { autocomplete, confirm, get_text } from "../util/cli.ts";
+import { none, type Option, some } from "../util/option.ts";
+import { err, ok, type Result } from "../util/result.ts";
+import { type ImportFormat, parse_file } from "./remote/parse.ts";
+
+export { import_formats } from "./remote/parse.ts";
 
 async function get_local_databases(
     config: Config,
@@ -134,7 +136,7 @@ export async function new_database(
 
     const parent = (await get_parent_page(client)).unwrap();
 
-    console.log(`Creating new database '${_name}'`);
+    console.info(`Creating new database '${_name}'`);
     const database = construct_database_request(parent, _name, properties);
 
     const res = await create_database(client, database);
@@ -144,7 +146,7 @@ export async function new_database(
         return;
     }
 
-    console.log("Successfully created database. Saving locally");
+    console.info("Successfully created database. Saving locally");
 
     config.add_databases([database_object_to_database(res.value)]);
 }
@@ -207,7 +209,7 @@ export async function normalize(
         .filter(([_, updates]) => updates.length > 0);
 
     if (missing_properties.length === 0) {
-        console.log("No updates to perfrom");
+        console.info("No updates to perfrom");
         return;
     }
 
@@ -217,27 +219,27 @@ export async function normalize(
         for (const update of updates) {
             switch (update.type) {
                 case "add":
-                    console.log(
+                    console.info(
                         `Add column '${update.value} of type '${update.column_type}'`,
                     );
                     break;
                 case "update_title":
-                    console.log(`Change title to '${update.value}'`);
+                    console.info(`Change title to '${update.value}'`);
                     break;
             }
         }
         console.groupEnd();
-        console.log();
+        console.info();
     }
     console.groupEnd();
     if (options.dryRun) {
-        console.log("Dry-run, nothing done.");
+        console.info("Dry-run, nothing done.");
         return;
     }
 
     const answer = await confirm("Perform these updates?", true);
     if (!answer) {
-        console.log("Nothing done.");
+        console.info("Nothing done.");
         return;
     }
 
@@ -256,7 +258,7 @@ export async function normalize(
                 }
                 case "update_title": {
                     db_update.properties ??= {};
-                    db_update.properties["title"] = {
+                    db_update.properties.title = {
                         type: "title",
                         title: {},
                         name: update.value,
@@ -266,7 +268,7 @@ export async function normalize(
             }
         }
 
-        console.log(`Updating database '${db.name}'`);
+        console.info(`Updating database '${db.name}'`);
         const res = await update_database(client, db.id, db_update);
         if (res.isErr()) {
             console.error(res.err);
@@ -274,12 +276,6 @@ export async function normalize(
     }
 }
 
-export { import_formats } from "./remote/parse";
-type DatabasePageProperties = Extract<
-    CreatePageParameters,
-    { parent: { database_id: string } }
->["properties"];
-type PageProperty = Extract<DatabasePageProperties[string], object>;
 type ImportOptions = {
     append?: string;
 };
@@ -310,7 +306,7 @@ export async function new_from_import(
         let db_name = file_path.split(".").filter((v) => v.length > 0)[0];
         const answer = (
             await confirm(
-                `About to create database with name ${db_name}. Do you want to change the name?`,
+                `About to create database with name '${db_name}'. Do you want to change the name?`,
             )
         ).expect("Expected y/n to be chosen. Exiting");
         if (answer) {
@@ -319,9 +315,9 @@ export async function new_from_import(
             ).expect("Expected name to be entered. Exiting");
         }
 
-        console.log("Fetching pages");
+        console.info("Fetching pages");
         const parent = (await get_parent_page(client)).unwrap();
-        console.log(`Creating new database '${db_name}'`);
+        console.info(`Creating new database '${db_name}'`);
         const database = construct_database_request(
             parent,
             db_name,
@@ -388,7 +384,6 @@ export async function new_from_import(
     for (const i in units) {
         const unit = units[i];
 
-        // TODO: handle list and plurals
         const existing = await get_page_from_database(
             client,
             parent_id,
@@ -404,11 +399,11 @@ export async function new_from_import(
             { parent: { database_id: string } | { page_id: string } }
         >["properties"] = {};
         if (!existing.value) {
-            props["key"] = {
+            props.key = {
                 type: "title",
                 title: [{ text: { content: unit.key } }],
             };
-            props["context"] = {
+            props.context = {
                 type: "rich_text",
                 rich_text: [{ text: { content: unit.context } }],
             };
@@ -422,7 +417,7 @@ export async function new_from_import(
 
         const res = await (async () => {
             if (existing.value) {
-                console.log(
+                console.info(
                     `Updating page '${unit.key}' (${i} of ${units.length})`,
                 );
                 return await update_page(client, {
@@ -430,7 +425,7 @@ export async function new_from_import(
                     properties: props,
                 });
             }
-            console.log(
+            console.info(
                 `Creating page '${unit.key}' (${i} of ${units.length})`,
             );
             return await create_page(client, {

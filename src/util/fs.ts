@@ -1,8 +1,8 @@
-import { constants } from "fs";
-import { access, writeFile, rm, rmdir, readdir, stat } from "fs/promises";
-import { join } from "path";
+import { constants } from "node:fs";
+import { access, readdir, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
-import { Result, err, ok } from "./result";
+import { err, ok, type Result } from "./result.ts";
 
 export async function exists(path: string): Promise<boolean> {
     try {

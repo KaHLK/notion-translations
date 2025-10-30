@@ -1,16 +1,16 @@
 import { mkdir } from "node:fs/promises";
 import type { Client } from "@notionhq/client";
-import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints.ts";
 
-import { get_from_database } from "../api";
-import { GenCache } from "../cache";
-import type { Config } from "../config";
-import type { Database } from "../model";
-import { confirm } from "../util/cli";
-import { exists, save } from "../util/fs";
-import { Notion } from "../util/notion";
-import { err, type Result } from "../util/result";
-import { gen_resx } from "./gen/resx";
+import { get_from_database } from "../api.ts";
+import { GenCache } from "../cache.ts";
+import type { Config } from "../config.ts";
+import type { Database } from "../model.ts";
+import { confirm } from "../util/cli.ts";
+import { exists, save } from "../util/fs.ts";
+import { Notion } from "../util/notion.ts";
+import { err, type Result } from "../util/result.ts";
+import { gen_resx } from "./gen/resx.ts";
 
 // TODO: Allow for setting the name of the output files (in some form of format, where a part is replaced with the language or it is appended if no replaceable part is found).
 

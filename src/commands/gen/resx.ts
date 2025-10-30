@@ -1,4 +1,4 @@
-import { Notion } from "../../util/notion";
+import { Notion } from "../../util/notion.ts";
 
 const resx_meta = `<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
 <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />

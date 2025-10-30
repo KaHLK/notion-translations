@@ -1,5 +1,5 @@
-import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-import { Notion } from "./util/notion";
+import type { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints.ts";
+import type { Notion } from "./util/notion.ts";
 
 export interface LangMapping {
     [key: Notion.Lng]: string;

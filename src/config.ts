@@ -1,10 +1,10 @@
 import { readFile, rm, writeFile } from "node:fs/promises";
 
-import { CONFIG_FILE } from "./constants";
-import type { Database } from "./model";
-import { exists } from "./util/fs";
-import { err, ok, type Result } from "./util/result";
-import type { NonFunctionMembers } from "./util/types";
+import { CONFIG_FILE } from "./constants.ts";
+import type { Database } from "./model.ts";
+import { exists } from "./util/fs.ts";
+import { err, ok, type Result } from "./util/result.ts";
+import type { NonFunctionMembers } from "./util/types.ts";
 
 type ConfigJson = Partial<NonFunctionMembers<Config>>;
 

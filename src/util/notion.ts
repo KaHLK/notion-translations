@@ -1,5 +1,5 @@
 import { isNotionClientError } from "@notionhq/client";
-import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints.ts";
 
 export function map_error(e: unknown, message: string): Error {
     if (isNotionClientError(e)) {

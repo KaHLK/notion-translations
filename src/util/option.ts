@@ -1,4 +1,4 @@
-import { Result, ok, err } from "./result";
+import { err, ok, type Result } from "./result.ts";
 
 enum OptionVariant {
     Some = 0,
@@ -15,7 +15,7 @@ export function none<T = never>(): Option<T> {
 
 abstract class OptionImpl<T> {
     abstract type: OptionVariant;
-    abstract toString(): String;
+    abstract toString(): string;
 
     get some(): T | null {
         if (this.isSome()) {
@@ -114,7 +114,7 @@ abstract class OptionImpl<T> {
         cb: (v: T) => Promise<Option<U>>,
     ): Promise<Option<U>> {
         if (this.isSome()) {
-            return cb(this.value);
+            return await cb(this.value);
         }
         return none();
     }
@@ -217,17 +217,18 @@ class Some<T> extends OptionImpl<T> {
         this.#value = value;
     }
 
-    toString(): String {
+    toString(): string {
         return `Some { value: ${this.value} }`;
     }
 }
 
 class None<T> extends OptionImpl<T> {
     type = OptionVariant.None;
-    // @ts-ignore: Required for type-safe value  access
+    // @ts-expect-error: Required for type-safe value access
+    // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Required for type-safe value access
     #v: never;
 
-    toString(): String {
+    toString(): string {
         return "None";
     }
 }
