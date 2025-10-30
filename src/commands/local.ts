@@ -1,10 +1,10 @@
-import { Client } from "@notionhq/client";
+import type { Client } from "@notionhq/client";
 import chalk from "chalk";
 
-import { get_databases } from "../api";
-import { Config } from "../config";
-import { Database, database_object_to_database } from "../model";
-import { autocomplete_multiselect, confirm } from "../util/cli";
+import { get_databases } from "../api.ts";
+import type { Config } from "../config.ts";
+import { type Database, database_object_to_database } from "../model.ts";
+import { autocomplete_multiselect, confirm } from "../util/cli.ts";
 
 export async function add(config: Config, client: Client) {
     const databases = (await get_databases(client)).unwrap();
@@ -89,7 +89,7 @@ export function list(config: Config) {
     }
     console.group("Databases used for generating language files:");
     for (const db of config.databases) {
-        console.log(`${chalk.cyan(db.name)} (${chalk.red(db.id)})`);
+        console.info(`${chalk.cyan(db.name)} (${chalk.red(db.id)})`);
     }
     console.groupEnd();
 }
@@ -137,7 +137,7 @@ export async function sync(config: Config, client: Client) {
         config.update_database(database_object_to_database(updated));
         i++;
     }
-    console.log(
+    console.info(
         `Updated ${i} databases${
             deleted > 0 ? ` and deleted ${deleted} databases locally` : ""
         }`,

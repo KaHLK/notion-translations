@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const main = require("./build/main.js");
+import { main } from "./build/main.js";
 
-main.default()
+main()
     .then((ret) => process.exit(ret))
     .catch((e) => {
         console.error(e);

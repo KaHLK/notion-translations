@@ -2,15 +2,15 @@ import { Client } from "@notionhq/client";
 import { Argument, Command, Option } from "commander";
 import dotenv from "dotenv";
 
-import { Gen, Local, Remote, Util } from "./commands";
-import { Config } from "./config";
-import { CONFIG_FILE } from "./constants";
+import { Gen, Local, Remote, Util } from "./commands/index.ts";
+import { Config } from "./config.ts";
+import { CONFIG_FILE } from "./constants.ts";
 
 interface GlobalOptions {
     config?: string;
 }
 
-export default async function main(): Promise<number> {
+export async function main(): Promise<number> {
     dotenv.config();
 
     if (!process.env.NOTION_TOKEN) {
@@ -47,7 +47,7 @@ export default async function main(): Promise<number> {
         )
         .action(async (options, cmd) => {
             config = await get_config(cmd);
-            await Util.init(options, config);
+            Util.init(options, config);
         });
 
     app.command("clean")

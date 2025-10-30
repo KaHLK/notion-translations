@@ -1,4 +1,4 @@
-import { Option, some, none } from "./option";
+import { none, type Option, some } from "./option.ts";
 
 enum ResultVariant {
     OK = 0,
@@ -15,7 +15,7 @@ export function err<E>(error: E): Result<never, E> {
 
 abstract class ResultImpl<T, E> {
     abstract type: ResultVariant;
-    abstract toString(): String;
+    abstract toString(): string;
 
     isOk(): this is Ok<T, E> {
         return this.type === ResultVariant.OK;
@@ -173,7 +173,7 @@ class Ok<T, E> extends ResultImpl<T, E> {
         this.#value = value;
     }
 
-    toString(): String {
+    toString(): string {
         return `Ok { value: ${this.value} }`;
     }
 }
@@ -191,7 +191,7 @@ class Err<E, T> extends ResultImpl<T, E> {
         this.#error = err;
     }
 
-    toString(): String {
+    toString(): string {
         return `Err { error: ${this.error} }`;
     }
 }

@@ -1,9 +1,8 @@
-import { open, readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { type Element, xml2js } from "xml-js";
-import type { Config } from "../../config";
-import { get_text } from "../../util/cli";
-import { none, type Option, some } from "../../util/option";
+import { get_text } from "../../util/cli.ts";
+import { none, type Option, some } from "../../util/option.ts";
 
 export const import_formats = [
     "aggregate",
@@ -105,13 +104,12 @@ async function parse_key_value(
                     languages: { [lng]: v },
                     context: key,
                 };
-            } else {
-                return {
-                    key,
-                    languages: { [lng]: value },
-                    context: "",
-                };
             }
+            return {
+                key,
+                languages: { [lng]: value },
+                context: "",
+            };
         }),
     );
 }
@@ -133,7 +131,11 @@ function parse_aggregate(file: unknown): Option<TranslationUnit[]> {
     const aggregate = file as AggregateJSON;
     const res: TranslationUnit[] = [];
     for (const [key, values] of Object.entries(aggregate)) {
-        res.push({ key, languages: values, context: "" });
+        res.push({
+            key,
+            languages: values,
+            context: "",
+        });
     }
 
     return some(res);

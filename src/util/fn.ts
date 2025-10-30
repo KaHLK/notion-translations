@@ -14,12 +14,3 @@ export function* range(
         yield i;
     }
 }
-
-export function* enumerate<T>(it: Iterator<T>): Generator<[T, number]> {
-    let v;
-    let i = 0;
-    // rome-ignore lint/suspicious/noAssignInExpressions: Uses inline assignment to v, to allow for a smaller footprint
-    while (!(v = it.next()).done) {
-        yield [v.value, i++];
-    }
-}

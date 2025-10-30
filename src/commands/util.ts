@@ -1,5 +1,5 @@
-import { GenCache } from "../cache";
-import { Config } from "../config";
+import { GenCache } from "../cache.ts";
+import { Config } from "../config.ts";
 
 interface InitOptions {
     outDir?: string;
