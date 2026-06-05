@@ -311,11 +311,19 @@ function parse_pages(
     };
 }
 
+const allowed_unicode = [{ search: "\\xAD", actual: "\xAD" }];
 function get_richtext(rich_text: Notion.RichText): string {
-    return rich_text.rich_text
+    let text = rich_text.rich_text
         .map((rt) => rt.plain_text)
         .join(" ")
         .trim();
+
+    for (const { search, actual } of allowed_unicode) {
+        if (text.includes(search)) {
+            text = text.replaceAll(search, actual);
+        }
+    }
+    return text;
 }
 
 async function get_dir(
