@@ -254,7 +254,7 @@ function parse_pages(
 
         const title = (title_property as Notion.Title).title
             .map((t) => t.plain_text)
-            .join("_") as Notion.Key;
+            .join("") as Notion.Key;
         const context = get_richtext(context_property as Notion.RichText);
 
         const properties = Object.entries(page.properties);
@@ -315,7 +315,7 @@ const allowed_unicode = [{ search: "\\xAD", actual: "\xAD" }];
 function get_richtext(rich_text: Notion.RichText): string {
     let text = rich_text.rich_text
         .map((rt) => rt.plain_text)
-        .join(" ")
+        .join("")
         .trim();
 
     for (const { search, actual } of allowed_unicode) {
