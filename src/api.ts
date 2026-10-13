@@ -169,7 +169,7 @@ export async function get_page_from_database(
             .map((r) =>
                 (r.properties.key as Notion.Title).title
                     .map((t) => t.plain_text)
-                    .join(" "),
+                    .join(""),
             )
             .indexOf(title_query);
 
