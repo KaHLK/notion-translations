@@ -5,18 +5,20 @@ import type {
     DatabaseObjectResponse,
     PageObjectResponse,
     QueryDatabaseParameters,
+    SearchParameters,
     UpdateDatabaseParameters,
     UpdateDatabaseResponse,
     UpdatePageParameters,
 } from "@notionhq/client/build/src/api-endpoints.ts";
 import { map_error, type Notion } from "./util/notion.ts";
 import { err, ok, type Result } from "./util/result.ts";
+import { with_retry } from "./util/retry.ts";
 
 export async function get_databases(
     client: Client,
 ): Promise<Result<DatabaseObjectResponse[], Error>> {
     try {
-        const res = (await collectPaginatedAPI(client.search, {
+        const res = (await collectPaginatedAPI(search_with_retry(client), {
             filter: { value: "database", property: "object" },
         })) as DatabaseObjectResponse[];
 
@@ -36,7 +38,9 @@ export async function get_database(
     id: string,
 ): Promise<Result<DatabaseObjectResponse, Error>> {
     try {
-        const res = await client.databases.retrieve({ database_id: id });
+        const res = await with_retry(`retrieve database '${id}'`, () =>
+            client.databases.retrieve({ database_id: id }),
+        );
 
         return ok(res as DatabaseObjectResponse);
     } catch (e) {
@@ -51,7 +55,9 @@ export async function create_database(
     db: CreateDatabaseParameters,
 ): Promise<Result<DatabaseObjectResponse, Error>> {
     try {
-        const res = await client.databases.create(db);
+        const res = await with_retry("create database", () =>
+            client.databases.create(db),
+        );
         return ok(res as DatabaseObjectResponse);
     } catch (e) {
         return err(
@@ -73,10 +79,9 @@ export async function update_database(
     update: DatabaseUpdate,
 ): Promise<Result<UpdateDatabaseResponse, Error>> {
     try {
-        const res = await client.databases.update({
-            database_id: id,
-            ...update,
-        });
+        const res = await with_retry(`update database '${id}'`, () =>
+            client.databases.update({ database_id: id, ...update }),
+        );
 
         return ok(res);
     } catch (e) {
@@ -91,7 +96,7 @@ export async function get_pages(
 ): Promise<Result<PageObjectResponse[], Error>> {
     try {
         const res = (
-            (await collectPaginatedAPI(client.search, {
+            (await collectPaginatedAPI(search_with_retry(client), {
                 filter: { property: "object", value: "page" },
             })) as PageObjectResponse[]
         ).filter(
@@ -114,10 +119,9 @@ export async function query_database(
     filter: Omit<QueryDatabaseParameters, "database_id"> = {},
 ): Promise<Result<PageObjectResponse[], Error>> {
     try {
-        const res = await client.databases.query({
-            database_id,
-            ...filter,
-        });
+        const res = await with_retry(`query database '${database_id}'`, () =>
+            client.databases.query({ database_id, ...filter }),
+        );
         return ok(res.results as PageObjectResponse[]);
     } catch (e) {
         return err(
@@ -134,7 +138,7 @@ export async function get_from_database(
     id: string,
 ): Promise<Result<PageObjectResponse[], Error>> {
     try {
-        const res = await collectPaginatedAPI(client.databases.query, {
+        const res = await collectPaginatedAPI(query_with_retry(client, id), {
             database_id: id,
         });
 
@@ -155,7 +159,7 @@ export async function get_page_from_database(
     title_query: string,
 ): Promise<Result<PageObjectResponse | undefined, Error>> {
     try {
-        const res = (await collectPaginatedAPI(client.databases.query, {
+        const res = (await collectPaginatedAPI(query_with_retry(client, id), {
             database_id: id,
             filter: {
                 property: "key",
@@ -192,7 +196,9 @@ export async function create_page(
     page: CreatePageParameters,
 ): Promise<Result<PageObjectResponse, Error>> {
     try {
-        const res = await client.pages.create(page);
+        const res = await with_retry("create page", () =>
+            client.pages.create(page),
+        );
         return ok(res as PageObjectResponse);
     } catch (e) {
         return err(
@@ -210,7 +216,9 @@ export async function create_page(
 
 export async function update_page(client: Client, page: UpdatePageParameters) {
     try {
-        const res = await client.pages.update(page);
+        const res = await with_retry(`update page '${page.page_id}'`, () =>
+            client.pages.update(page),
+        );
         return ok(res as PageObjectResponse);
     } catch (e) {
         return err(
@@ -224,4 +232,16 @@ export async function update_page(client: Client, page: UpdatePageParameters) {
             ),
         );
     }
+}
+
+function query_with_retry(client: Client, id: string) {
+    return (args: QueryDatabaseParameters) =>
+        with_retry(`query database '${id}'`, () =>
+            client.databases.query(args),
+        );
+}
+
+function search_with_retry(client: Client) {
+    return (args: SearchParameters) =>
+        with_retry("search", () => client.search(args));
 }
